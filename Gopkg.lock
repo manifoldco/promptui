@@ -2,14 +2,20 @@
 
 
 [[projects]]
+  branch = "master"
   name = "github.com/chzyer/readline"
   packages = ["."]
-  revision = "62c6fe6193755f722b8b8788aa7357be55a50ff1"
-  version = "v1.4"
+  revision = "6a4bc7b4feaeff8feb63f87d5fb2cf3e3610a559"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "686000749eaec0b8855b8eef5336cf63899fe51d"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "134182782113b3aa4d31f698080384b3df68b854832f1c2ba862015a17b52654"
+  inputs-digest = "f6d954d161826f762a11e7191eda7dd5ad93bd3d9f60fd101a72efc4f4a19938"
   solver-name = "gps-cdcl"
   solver-version = 1
