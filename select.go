@@ -101,6 +101,8 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			default:
 				selected--
 			}
+		case ' ': // space to go forward
+			start, end, selected = forward(start, end, selected, len(s.Items))
 		}
 
 		list := make([]string, end-start+1)
@@ -206,4 +208,32 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	}
 	value, err := p.Run()
 	return SelectedAdd, value, err
+}
+
+const pagination = 4
+
+type selection struct {
+	max, start, end, selected int
+}
+
+func forward(start, end, selected, max int) (nstart, nend, nselected int) {
+	nend = end + pagination
+
+	if nend >= max {
+		nend = max - 1
+	}
+
+	nstart = nend - pagination
+
+	if nstart < 0 {
+		nstart = 0
+	}
+
+	nselected = nstart
+
+	if nselected < selected {
+		nselected = selected
+	}
+
+	return nstart, nend, nselected
 }
