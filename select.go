@@ -12,6 +12,9 @@ import (
 // SelectedAdd is returned from SelectWithAdd when add is selected.
 const SelectedAdd = -1
 
+// TODO allow custom select height
+const pagination = 4
+
 // Select represents a list for selecting a single item
 type Select struct {
 	Label     string   // Label is the value displayed on the command line prompt.
@@ -103,6 +106,8 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			}
 		case ' ': // space to go forward
 			start, end, selected = forward(start, end, selected, len(s.Items))
+		case 'b':
+			start, end, selected = backward(start, end, selected, len(s.Items))
 		}
 
 		list := make([]string, end-start+1)
@@ -210,30 +215,46 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	return SelectedAdd, value, err
 }
 
-const pagination = 4
+func forward(start, end, selected, max int) (newStart, newEnd, newSelected int) {
+	newEnd = end + pagination
 
-type selection struct {
-	max, start, end, selected int
+	if newEnd >= max {
+		newEnd = max - 1
+	}
+
+	newStart = newEnd - pagination
+
+	if newStart < 0 {
+		newStart = 0
+	}
+
+	newSelected = newStart
+
+	if newSelected < selected {
+		newSelected = selected
+	}
+
+	return newStart, newEnd, newSelected
 }
 
-func forward(start, end, selected, max int) (nstart, nend, nselected int) {
-	nend = end + pagination
+func backward(start, end, selected, max int) (newStart, newEnd, newSelected int) {
+	newStart = start - pagination
 
-	if nend >= max {
-		nend = max - 1
+	if newStart < 0 {
+		newStart = 0
 	}
 
-	nstart = nend - pagination
+	newEnd = newStart + pagination
 
-	if nstart < 0 {
-		nstart = 0
+	if newEnd >= max {
+		newEnd = max - 1
 	}
 
-	nselected = nstart
+	newSelected = newStart
 
-	if nselected < selected {
-		nselected = selected
+	if newSelected > selected {
+		newSelected = selected
 	}
 
-	return nstart, nend, nselected
+	return newStart, newEnd, newSelected
 }
