@@ -49,9 +49,10 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	start := 0
 	end := 4
+	max := len(s.Items) - 1
 
 	if len(s.Items) <= end {
-		end = len(s.Items) - 1
+		end = max
 	}
 
 	selected := starting
@@ -86,7 +87,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			return nil, 0, true
 		case readline.CharNext:
 			switch selected {
-			case len(s.Items) - 1:
+			case max:
 			case end:
 				start++
 				end++
@@ -105,9 +106,9 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 				selected--
 			}
 		case ' ': // space to go forward
-			start, end, selected = forward(start, end, selected, len(s.Items))
+			start, end, selected = forward(start, end, selected, max)
 		case 'b':
-			start, end, selected = backward(start, end, selected, len(s.Items))
+			start, end, selected = backward(start, end, selected, max)
 		}
 
 		list := make([]string, end-start+1)
@@ -218,8 +219,8 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 func forward(start, end, selected, max int) (newStart, newEnd, newSelected int) {
 	newEnd = end + pagination
 
-	if newEnd >= max {
-		newEnd = max - 1
+	if newEnd > max {
+		newEnd = max
 	}
 
 	newStart = newEnd - pagination
@@ -246,8 +247,8 @@ func backward(start, end, selected, max int) (newStart, newEnd, newSelected int)
 
 	newEnd = newStart + pagination
 
-	if newEnd >= max {
-		newEnd = max - 1
+	if newEnd > max {
+		newEnd = max
 	}
 
 	newSelected = newStart
