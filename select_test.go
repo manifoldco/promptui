@@ -62,7 +62,7 @@ func TestBackward(t *testing.T) {
 			output:   example{start: 0, end: 2, selected: 0},
 		},
 		{
-			scenario: "when list is in the beggining",
+			scenario: "when list is in the beginning",
 			input:    example{start: 2, end: 6, selected: 2, max: 10},
 			output:   example{start: 0, end: 4, selected: 0},
 		},
