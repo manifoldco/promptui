@@ -12,6 +12,9 @@ import (
 // SelectedAdd is returned from SelectWithAdd when add is selected.
 const SelectedAdd = -1
 
+// TODO allow custom select height
+const pagination = 4
+
 // Select represents a list for selecting a single item
 type Select struct {
 	Label     string   // Label is the value displayed on the command line prompt.
@@ -46,9 +49,10 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	start := 0
 	end := 4
+	max := len(s.Items) - 1
 
 	if len(s.Items) <= end {
-		end = len(s.Items) - 1
+		end = max
 	}
 
 	selected := starting
@@ -83,7 +87,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			return nil, 0, true
 		case readline.CharNext:
 			switch selected {
-			case len(s.Items) - 1:
+			case max:
 			case end:
 				start++
 				end++
@@ -101,6 +105,10 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			default:
 				selected--
 			}
+		case ' ': // space to go forward
+			start, end, selected = forward(start, end, selected, max)
+		case 'b':
+			start, end, selected = backward(start, end, selected, max)
 		}
 
 		list := make([]string, end-start+1)
@@ -206,4 +214,48 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	}
 	value, err := p.Run()
 	return SelectedAdd, value, err
+}
+
+func forward(start, end, selected, max int) (newStart, newEnd, newSelected int) {
+	newEnd = end + pagination
+
+	if newEnd > max {
+		newEnd = max
+	}
+
+	newStart = newEnd - pagination
+
+	if newStart < 0 {
+		newStart = 0
+	}
+
+	newSelected = newStart
+
+	if newSelected < selected {
+		newSelected = selected
+	}
+
+	return newStart, newEnd, newSelected
+}
+
+func backward(start, end, selected, max int) (newStart, newEnd, newSelected int) {
+	newStart = start - pagination
+
+	if newStart < 0 {
+		newStart = 0
+	}
+
+	newEnd = newStart + pagination
+
+	if newEnd > max {
+		newEnd = max
+	}
+
+	newSelected = newStart
+
+	if newSelected > selected {
+		newSelected = selected
+	}
+
+	return newStart, newEnd, newSelected
 }
