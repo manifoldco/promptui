@@ -10,7 +10,7 @@ const esc = "\033["
 
 type attribute int
 
-// Forground weight/decoration attributes.
+// Foreground weight/decoration attributes.
 const (
 	reset attribute = iota
 
@@ -20,7 +20,7 @@ const (
 	FGUnderline
 )
 
-// Forground color attributes
+// Foreground color attributes
 const (
 	FGBlack attribute = iota + 30
 	FGRed

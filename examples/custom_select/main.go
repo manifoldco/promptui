@@ -22,7 +22,7 @@ func main() {
 	prompt := promptui.Select{
 		Label:         "Spicy Level",
 		Items:         peppers,
-		ItemsTemplate: `{{.Name}} ({{.HeatUnit}})`,
+		ItemsTemplate: `{{.Name}} ({{color "red" .HeatUnit}})`,
 	}
 
 	_, result, err := prompt.Run()
@@ -32,5 +32,5 @@ func main() {
 		return
 	}
 
-	fmt.Printf("You choose %q\n", result)
+	fmt.Printf("You choose %s\n", result)
 }

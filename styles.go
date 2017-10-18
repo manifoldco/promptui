@@ -2,6 +2,8 @@
 
 package promptui
 
+import "fmt"
+
 var (
 	bold       = Styler(FGBold)
 	faint      = Styler(FGFaint)
@@ -17,3 +19,11 @@ var (
 )
 
 var red = Styler(FGBold, FGRed)
+
+func color(name string, value interface{}) string {
+	s := fmt.Sprintf("%v", value)
+	if name == "red" {
+		return red(s)
+	}
+	return s
+}

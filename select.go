@@ -58,7 +58,11 @@ func (s *Select) Run() (int, string, error) {
 		s.ItemsTemplate = "{{.}}"
 	}
 
-	tpl, err := template.New("label").Parse(s.LabelTemplate)
+	funcMap := template.FuncMap{
+		"color": color,
+	}
+
+	tpl, err := template.New("label").Funcs(funcMap).Parse(s.LabelTemplate)
 	if err != nil {
 		return 0, "", err
 	}
@@ -67,7 +71,7 @@ func (s *Select) Run() (int, string, error) {
 	err = tpl.Execute(&buf, s.Label)
 	s.label = buf.String()
 
-	tpl, err = template.New("items").Parse(s.ItemsTemplate)
+	tpl, err = template.New("items").Funcs(funcMap).Parse(s.ItemsTemplate)
 	if err != nil {
 		return 0, "", err
 	}
