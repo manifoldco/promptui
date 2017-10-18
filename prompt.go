@@ -131,7 +131,6 @@ func (p *Prompt) Run() (string, error) {
 			if _, ok := err.(*ValidationError); ok {
 				state = IconBad
 			} else {
-				rl.Close()
 				return nil, 0, false
 			}
 		} else {
