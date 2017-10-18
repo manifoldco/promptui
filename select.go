@@ -18,6 +18,8 @@ const SelectedAdd = -1
 // TODO allow custom select height
 const pagination = 4
 
+// FuncMap defines template helpers for the output. It can be extended as a
+// regular map.
 var FuncMap = template.FuncMap{
 	"red":        red,
 	"bold":       bold,
@@ -80,6 +82,10 @@ func (s *Select) Run() (int, string, error) {
 
 	var buf bytes.Buffer
 	err = tpl.Execute(&buf, s.Label)
+	if err != nil {
+		return 0, "", err
+	}
+
 	s.label = buf.String()
 
 	tpl, err = template.New("items").Funcs(s.FuncMap).Parse(s.ItemsTemplate)
