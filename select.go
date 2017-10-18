@@ -18,10 +18,17 @@ const SelectedAdd = -1
 // TODO allow custom select height
 const pagination = 4
 
+var FuncMap = template.FuncMap{
+	"red":        red,
+	"bold":       bold,
+	"faint":      faint,
+	"underlined": underlined,
+}
+
 // Select represents a list for selecting a single item
 type Select struct {
 	// Label is the value displayed on the command line prompt. It can be any
-	// value one would pass to a text/template execute, including just a string.
+	// value one would pass to a text/template Execute(), including just a string.
 	Label interface{}
 
 	// LabelTemplate is a text template for label. It can be blank if the label is
@@ -29,12 +36,16 @@ type Select struct {
 	LabelTemplate string
 
 	// Items are the items to use in the list. It can be any slice value one would
-	// pass to a text/template execute, including a slice of string.
+	// pass to a text/template execute, including a string slice.
 	Items interface{}
 
 	// ItemsTemplate is a text template for each item. It can be blank if items is
-	// a slice of string.
+	// a string slice.
 	ItemsTemplate string
+
+	// FuncMap is a map of helpers for the templates. If nil, the default helpers
+	// are used.
+	FuncMap template.FuncMap
 
 	// IsVimMode sets whether readline is using Vim mode.
 	IsVimMode bool
@@ -58,11 +69,11 @@ func (s *Select) Run() (int, string, error) {
 		s.ItemsTemplate = "{{.}}"
 	}
 
-	funcMap := template.FuncMap{
-		"style": style,
+	if s.FuncMap == nil {
+		s.FuncMap = FuncMap
 	}
 
-	tpl, err := template.New("label").Funcs(funcMap).Parse(s.LabelTemplate)
+	tpl, err := template.New("label").Funcs(s.FuncMap).Parse(s.LabelTemplate)
 	if err != nil {
 		return 0, "", err
 	}
@@ -71,7 +82,7 @@ func (s *Select) Run() (int, string, error) {
 	err = tpl.Execute(&buf, s.Label)
 	s.label = buf.String()
 
-	tpl, err = template.New("items").Funcs(funcMap).Parse(s.ItemsTemplate)
+	tpl, err = template.New("items").Funcs(s.FuncMap).Parse(s.ItemsTemplate)
 	if err != nil {
 		return 0, "", err
 	}

@@ -9,20 +9,26 @@ import (
 type pepper struct {
 	Name     string
 	HeatUnit int
+	Peppers  int
 }
 
 func main() {
 	peppers := []pepper{
-		pepper{Name: "Bell Pepper", HeatUnit: 0},
-		pepper{Name: "Banana Pepper", HeatUnit: 100},
-		pepper{Name: "Poblano", HeatUnit: 1000},
-		pepper{Name: "Jalapeño", HeatUnit: 3500},
+		{Name: "Bell Pepper", HeatUnit: 0, Peppers: 0},
+		{Name: "Banana Pepper", HeatUnit: 100, Peppers: 1},
+		{Name: "Poblano", HeatUnit: 1000, Peppers: 2},
+		{Name: "Jalapeño", HeatUnit: 3500, Peppers: 3},
 	}
+
+	fns := promptui.FuncMap
+	fns["rangeLoop"] = rangeLoop
+
+	tpl := "{{bold .Name}} ({{red .HeatUnit}}) {{ range rangeLoop .Peppers }}\U0001F525{{ end }}"
 
 	prompt := promptui.Select{
 		Label:         "Spicy Level",
 		Items:         peppers,
-		ItemsTemplate: `{{style "bold" .Name}} ({{style "red" .HeatUnit}})`,
+		ItemsTemplate: tpl,
 	}
 
 	_, result, err := prompt.Run()
@@ -33,4 +39,8 @@ func main() {
 	}
 
 	fmt.Printf("You choose %s\n", result)
+}
+
+func rangeLoop(n int) []struct{} {
+	return make([]struct{}, n)
 }
