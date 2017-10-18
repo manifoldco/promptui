@@ -2,8 +2,11 @@ package promptui
 
 import (
 	"bytes"
+	"fmt"
+	"html/template"
 	"io"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/chzyer/readline"
@@ -17,14 +20,68 @@ const pagination = 4
 
 // Select represents a list for selecting a single item
 type Select struct {
-	Label     string   // Label is the value displayed on the command line prompt.
-	Items     []string // Items are the items to use in the list.
-	IsVimMode bool     // Whether readline is using Vim mode.
+	// Label is the value displayed on the command line prompt. It can be any
+	// value one would pass to a text/template execute, including just a string.
+	Label interface{}
+
+	// LabelTemplate is a text template for label. It can be blank if the label is
+	// a string.
+	LabelTemplate string
+
+	// Items are the items to use in the list. It can be any slice value one would
+	// pass to a text/template execute, including a slice of string.
+	Items interface{}
+
+	// ItemsTemplate is a text template for each item. It can be blank if items is
+	// a slice of string.
+	ItemsTemplate string
+
+	// IsVimMode sets whether readline is using Vim mode.
+	IsVimMode bool
+
+	label string
+	items []string
 }
 
 // Run runs the Select list. It returns the index of the selected element,
 // and its value.
 func (s *Select) Run() (int, string, error) {
+	if reflect.TypeOf(s.Items).Kind() != reflect.Slice {
+		return 0, "", fmt.Errorf("Items is not a slice")
+	}
+
+	if s.LabelTemplate == "" {
+		s.LabelTemplate = "{{.}}:"
+	}
+
+	if s.ItemsTemplate == "" {
+		s.ItemsTemplate = "{{.}}"
+	}
+
+	tpl, err := template.New("label").Parse(s.LabelTemplate)
+	if err != nil {
+		return 0, "", err
+	}
+
+	var buf bytes.Buffer
+	err = tpl.Execute(&buf, s.Label)
+	s.label = buf.String()
+
+	tpl, err = template.New("items").Parse(s.ItemsTemplate)
+	if err != nil {
+		return 0, "", err
+	}
+
+	list := reflect.ValueOf(s.Items)
+	for i := 0; i < list.Len(); i++ {
+		var buf bytes.Buffer
+		err := tpl.Execute(&buf, list.Index(i))
+		if err != nil {
+			return 0, "", err
+		}
+		s.items = append(s.items, buf.String())
+	}
+
 	return s.innerRun(0, ' ')
 }
 
@@ -42,16 +99,14 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		c.VimMode = true
 	}
 
-	prompt := s.Label + ": "
-
 	c.HistoryLimit = -1
 	c.UniqueEditLine = true
 
 	start := 0
 	end := 4
-	max := len(s.Items) - 1
+	max := len(s.items) - 1
 
-	if len(s.Items) <= end {
+	if len(s.items) <= end {
 		end = max
 	}
 
@@ -115,12 +170,12 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		for i := start; i <= end; i++ {
 			page := ' '
 			selection := " "
-			item := s.Items[i]
+			item := s.items[i]
 
 			switch i {
 			case 0:
 				page = top
-			case len(s.Items) - 1:
+			case len(s.items) - 1:
 			case start:
 				page = '↑'
 			case end:
@@ -135,7 +190,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 		prefix := ""
 		prefix += upLine(uint(len(list))) + "\r" + clearLine
-		p := prefix + bold(IconInitial) + " " + bold(prompt) + downLine(1) + strings.Join(list, downLine(1))
+		p := prefix + bold(IconInitial) + " " + bold(s.label) + downLine(1) + strings.Join(list, downLine(1))
 		rl.SetPrompt(p)
 		rl.Refresh()
 
@@ -164,8 +219,9 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	rl.Write(bytes.Repeat([]byte(clearLine+upLine(1)), end-start+1))
 	rl.Write([]byte("\r"))
 
-	out := s.Items[selected]
-	rl.Write([]byte(IconGood + " " + prompt + faint(out) + "\n"))
+	out := s.items[selected]
+
+	rl.Write([]byte(IconGood + " " + s.label + faint(out) + "\n"))
 
 	rl.Write([]byte(showCursor))
 	return selected, out, err
