@@ -59,7 +59,7 @@ func (s *Select) Run() (int, string, error) {
 	}
 
 	funcMap := template.FuncMap{
-		"color": color,
+		"style": style,
 	}
 
 	tpl, err := template.New("label").Funcs(funcMap).Parse(s.LabelTemplate)

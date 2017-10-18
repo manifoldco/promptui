@@ -20,10 +20,14 @@ var (
 
 var red = Styler(FGBold, FGRed)
 
-func color(name string, value interface{}) string {
+func style(name string, value interface{}) string {
 	s := fmt.Sprintf("%v", value)
-	if name == "red" {
+	switch name {
+	case "red":
 		return red(s)
+	case "bold":
+		return bold(s)
+	default:
+		return s
 	}
-	return s
 }
