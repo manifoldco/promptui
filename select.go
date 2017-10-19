@@ -56,6 +56,8 @@ type Select struct {
 	items []interface{}
 }
 
+// SelectTemplates allow a select prompt to be customized following stdlib
+// text/template syntax. If any field is blank a default template is used.
 type SelectTemplates struct {
 	// Active is a text template for the label.
 	Label string
@@ -241,7 +243,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 func (s *Select) prepareTemplates() error {
 	if reflect.TypeOf(s.Items).Kind() != reflect.Slice {
-		fmt.Errorf("Items is not a slice")
+		return fmt.Errorf("Items %v is not a slice", s.Items)
 	}
 
 	tpls := s.Templates
@@ -254,7 +256,7 @@ func (s *Select) prepareTemplates() error {
 	}
 
 	if tpls.Label == "" {
-		tpls.Label = `{{ "?" | blue }} {{.}}: `
+		tpls.Label = fmt.Sprintf(`{{ "%s" | blue }} {{.}}: `, IconInitial)
 	}
 
 	tpl, err := template.New("").Funcs(tpls.FuncMap).Parse(tpls.Label)
@@ -287,7 +289,7 @@ func (s *Select) prepareTemplates() error {
 	tpls.inactive = tpl
 
 	if tpls.Selected == "" {
-		tpls.Selected = `{{ "✔" | green }} {{ . | faint }}`
+		tpls.Selected = fmt.Sprintf(`{{ "%s" | green }} {{ . | faint }}`, IconGood)
 	}
 
 	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Selected)
