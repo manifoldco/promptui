@@ -18,23 +18,6 @@ const SelectedAdd = -1
 // TODO allow custom select height
 const pagination = 4
 
-// FuncMap defines template helpers for the output. It can be extended as a
-// regular map.
-var FuncMap = template.FuncMap{
-	"black":     Styler(FGBlack),
-	"red":       Styler(FGRed),
-	"green":     Styler(FGGreen),
-	"yellow":    Styler(FGYellow),
-	"blue":      Styler(FGBlue),
-	"magenta":   Styler(FGMagenta),
-	"cyan":      Styler(FGCyan),
-	"white":     Styler(FGWhite),
-	"bold":      Styler(FGBold),
-	"faint":     Styler(FGFaint),
-	"italic":    Styler(FGItalic),
-	"underline": Styler(FGUnderline),
-}
-
 // Select represents a list for selecting a single item
 type Select struct {
 	// Label is the value displayed on the command line prompt. It can be any
@@ -59,16 +42,16 @@ type Select struct {
 // SelectTemplates allow a select prompt to be customized following stdlib
 // text/template syntax. If any field is blank a default template is used.
 type SelectTemplates struct {
-	// Active is a text template for the label.
+	// Active is a text/template for the label.
 	Label string
 
-	// Active is a text template for when an item is current active.
+	// Active is a text/template for when an item is current active.
 	Active string
 
-	// Inactive is a text template for when an item is not current active.
+	// Inactive is a text/template for when an item is not current active.
 	Inactive string
 
-	// Selected is a text template for when an item was successfully selected.
+	// Selected is a text/template for when an item was successfully selected.
 	Selected string
 
 	// FuncMap is a map of helpers for the templates. If nil, the default helpers

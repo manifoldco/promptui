@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 const esc = "\033["
@@ -35,11 +36,28 @@ const (
 // ResetCode is the character code used to reset the terminal formatting
 var ResetCode = fmt.Sprintf("%s%dm", esc, reset)
 
-var (
+const (
 	hideCursor = esc + "?25l"
 	showCursor = esc + "?25h"
 	clearLine  = esc + "2K"
 )
+
+// FuncMap defines template helpers for the output. It can be extended as a
+// regular map.
+var FuncMap = template.FuncMap{
+	"black":     Styler(FGBlack),
+	"red":       Styler(FGRed),
+	"green":     Styler(FGGreen),
+	"yellow":    Styler(FGYellow),
+	"blue":      Styler(FGBlue),
+	"magenta":   Styler(FGMagenta),
+	"cyan":      Styler(FGCyan),
+	"white":     Styler(FGWhite),
+	"bold":      Styler(FGBold),
+	"faint":     Styler(FGFaint),
+	"italic":    Styler(FGItalic),
+	"underline": Styler(FGUnderline),
+}
 
 func upLine(n uint) string {
 	return movementCode(n, 'A')
