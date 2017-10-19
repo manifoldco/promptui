@@ -38,7 +38,7 @@ type Prompt struct {
 	stdout io.Writer
 }
 
-// SelectTemplates allow a prompt to be customized following stdlib
+// PromptTemplates allow a prompt to be customized following stdlib
 // text/template syntax. If any field is blank a default template is used.
 type PromptTemplates struct {
 	// Prompt is a text/template for the initial prompt question.
@@ -241,6 +241,9 @@ func (p *Prompt) prepareTemplates() error {
 		tpls.FuncMap = FuncMap
 	}
 
+	bold := Styler(FGBold)
+	//faint := Styler(FGFaint)
+
 	if p.IsConfirm {
 		p.Default = ""
 		if tpls.Confirm == "" {
@@ -259,7 +262,7 @@ func (p *Prompt) prepareTemplates() error {
 		tpls.prompt = tpl
 	} else {
 		if tpls.Prompt == "" {
-			tpls.Prompt = fmt.Sprintf(`{{ "%s" | bold }} {{ . | bold }}: `, IconInitial)
+			tpls.Prompt = fmt.Sprintf("%s {{ . | bold }}%s ", bold(IconInitial), bold(":"))
 		}
 
 		tpl, err := template.New("").Funcs(tpls.FuncMap).Parse(tpls.Prompt)
@@ -271,7 +274,7 @@ func (p *Prompt) prepareTemplates() error {
 	}
 
 	if tpls.Valid == "" {
-		tpls.Valid = fmt.Sprintf(`{{ "%s" | bold }} {{ . | bold }}: `, IconGood)
+		tpls.Valid = fmt.Sprintf("%s {{ . | bold }}%s ", bold(IconGood), bold(":"))
 	}
 
 	tpl, err := template.New("").Funcs(tpls.FuncMap).Parse(tpls.Valid)
@@ -282,7 +285,7 @@ func (p *Prompt) prepareTemplates() error {
 	tpls.valid = tpl
 
 	if tpls.Invalid == "" {
-		tpls.Invalid = fmt.Sprintf(`{{ "%s" | bold }} {{ . | bold }}: `, IconBad)
+		tpls.Invalid = fmt.Sprintf("%s {{ . | bold }}%s ", bold(IconBad), bold(":"))
 	}
 
 	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Invalid)

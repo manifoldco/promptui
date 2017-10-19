@@ -3,7 +3,6 @@
 package promptui
 
 var (
-	bold  = Styler(FGBold)
 	faint = Styler(FGFaint)
 )
 
@@ -15,5 +14,3 @@ var (
 	IconBad     = Styler(FGRed)("✗")
 	IconSelect  = Styler(FGBold)("▸")
 )
-
-var red = Styler(FGBold, FGRed)
