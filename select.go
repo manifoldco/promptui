@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -21,18 +22,18 @@ const pagination = 4
 // FuncMap defines template helpers for the output. It can be extended as a
 // regular map.
 var FuncMap = template.FuncMap{
-	"black":      Styler(FGBlack),
-	"red":        Styler(FGRed),
-	"green":      Styler(FGGreen),
-	"yellow":     Styler(FGYellow),
-	"blue":       Styler(FGBlue),
-	"magenta":    Styler(FGMagenta),
-	"cyan":       Styler(FGCyan),
-	"white":      Styler(FGWhite),
-	"bold":       Styler(FGBold),
-	"faint":      Styler(FGFaint),
-	"italic":     Styler(FGItalic),
-	"underlined": Styler(FGUnderline),
+	"black":     Styler(FGBlack),
+	"red":       Styler(FGRed),
+	"green":     Styler(FGGreen),
+	"yellow":    Styler(FGYellow),
+	"blue":      Styler(FGBlue),
+	"magenta":   Styler(FGMagenta),
+	"cyan":      Styler(FGCyan),
+	"white":     Styler(FGWhite),
+	"bold":      Styler(FGBold),
+	"faint":     Styler(FGFaint),
+	"italic":    Styler(FGItalic),
+	"underline": Styler(FGUnderline),
 }
 
 // Select represents a list for selecting a single item
@@ -41,27 +42,42 @@ type Select struct {
 	// value one would pass to a text/template Execute(), including just a string.
 	Label interface{}
 
-	// LabelTemplate is a text template for label. It can be blank if the label is
-	// a string.
-	LabelTemplate string
-
-	// Items are the items to use in the list. It can be any slice value one would
+	// Items are the items to use in the list. It can be any slice type one would
 	// pass to a text/template execute, including a string slice.
 	Items interface{}
 
-	// ItemsTemplate is a text template for each item. It can be blank if items is
-	// a string slice.
-	ItemsTemplate string
+	// IsVimMode sets whether readline is using Vim mode.
+	IsVimMode bool
+
+	// Templates can be used to customize the select output. If nil is passed, the
+	// default templates are used.
+	Templates *SelectTemplates
+
+	label string
+	items []interface{}
+}
+
+type SelectTemplates struct {
+	// Active is a text template for the label.
+	Label string
+
+	// Active is a text template for when an item is current active.
+	Active string
+
+	// Inactive is a text template for when an item is not current active.
+	Inactive string
+
+	// Selected is a text template for when an item was successfully selected.
+	Selected string
 
 	// FuncMap is a map of helpers for the templates. If nil, the default helpers
 	// are used.
 	FuncMap template.FuncMap
 
-	// IsVimMode sets whether readline is using Vim mode.
-	IsVimMode bool
-
-	label string
-	items []string
+	label    *template.Template
+	active   *template.Template
+	inactive *template.Template
+	selected *template.Template
 }
 
 // Run runs the Select list. It returns the index of the selected element,
@@ -158,7 +174,6 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		list := make([]string, end-start+1)
 		for i := start; i <= end; i++ {
 			page := ' '
-			selection := " "
 			item := s.items[i]
 
 			switch i {
@@ -170,16 +185,31 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			case end:
 				page = '↓'
 			}
+
+			var output string
+			var err error
+
 			if i == selected {
-				selection = "▸"
-				item = underlined(item)
+				output, err = render(s.Templates.active, item)
+			} else {
+				output, err = render(s.Templates.inactive, item)
 			}
-			list[i-start] = clearLine + "\r" + string(page) + " " + selection + " " + item
+
+			if err != nil {
+				log.Fatal(err) //FIXME
+			}
+
+			list[i-start] = clearLine + "\r" + string(page) + " " + output
 		}
 
 		prefix := ""
 		prefix += upLine(uint(len(list))) + "\r" + clearLine
-		p := prefix + IconInitial + " " + s.label + downLine(1) + strings.Join(list, downLine(1))
+		label, err := render(s.Templates.label, s.Label)
+		if err != nil {
+			log.Fatal(err) //FIXME
+		}
+
+		p := prefix + label + downLine(1) + strings.Join(list, downLine(1))
 		rl.SetPrompt(p)
 		rl.Refresh()
 
@@ -208,12 +238,17 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	rl.Write(bytes.Repeat([]byte(clearLine+upLine(1)), end-start+1))
 	rl.Write([]byte("\r"))
 
-	out := s.items[selected]
+	item := s.items[selected]
 
-	rl.Write([]byte(IconGood + " " + s.label + faint(out) + "\n"))
+	output, err := render(s.Templates.selected, item)
+	if err != nil {
+		return 0, "", err
+	}
 
+	rl.Write([]byte(clearLine + "\r" + output + "\n"))
 	rl.Write([]byte(showCursor))
-	return selected, out, err
+
+	return selected, fmt.Sprintf("%v", item), err
 }
 
 func (s *Select) prepareTemplates() error {
@@ -221,45 +256,65 @@ func (s *Select) prepareTemplates() error {
 		fmt.Errorf("Items is not a slice")
 	}
 
-	if s.LabelTemplate == "" {
-		s.LabelTemplate = "{{.}}:"
+	tpls := s.Templates
+	if tpls == nil {
+		tpls = &SelectTemplates{}
 	}
 
-	if s.ItemsTemplate == "" {
-		s.ItemsTemplate = "{{.}}"
+	if tpls.FuncMap == nil {
+		tpls.FuncMap = FuncMap
 	}
 
-	if s.FuncMap == nil {
-		s.FuncMap = FuncMap
+	if tpls.Label == "" {
+		tpls.Label = `{{ "?" | blue }} {{.}}: `
 	}
 
-	tpl, err := template.New("label").Funcs(s.FuncMap).Parse(s.LabelTemplate)
+	tpl, err := template.New("").Funcs(tpls.FuncMap).Parse(tpls.Label)
 	if err != nil {
 		return err
 	}
 
-	var buf bytes.Buffer
-	err = tpl.Execute(&buf, s.Label)
+	tpls.label = tpl
+
+	if tpls.Active == "" {
+		tpls.Active = "▸ {{ . |  underline }}"
+	}
+
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Active)
 	if err != nil {
 		return err
 	}
 
-	s.label = buf.String()
+	tpls.active = tpl
 
-	tpl, err = template.New("items").Funcs(s.FuncMap).Parse(s.ItemsTemplate)
+	if tpls.Inactive == "" {
+		tpls.Inactive = "  {{.}}"
+	}
+
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Inactive)
 	if err != nil {
 		return err
 	}
+
+	tpls.inactive = tpl
+
+	if tpls.Selected == "" {
+		tpls.Selected = `{{ "✔" | green }} {{ . | faint }}`
+	}
+
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Selected)
+	if err != nil {
+		return err
+	}
+
+	tpls.selected = tpl
 
 	list := reflect.ValueOf(s.Items)
 	for i := 0; i < list.Len(); i++ {
-		var buf bytes.Buffer
-		err := tpl.Execute(&buf, list.Index(i))
-		if err != nil {
-			return err
-		}
-		s.items = append(s.items, buf.String())
+		s.items = append(s.items, list.Index(i))
 	}
+
+	s.Templates = tpls
 
 	return nil
 }
@@ -351,4 +406,13 @@ func pageup(start, end, selected, max int) (newStart, newEnd, newSelected int) {
 	}
 
 	return newStart, newEnd, newSelected
+}
+
+func render(tpl *template.Template, data interface{}) (string, error) {
+	var buf bytes.Buffer
+	err := tpl.Execute(&buf, data)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }

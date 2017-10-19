@@ -29,22 +29,27 @@ func main() {
 	fns := promptui.FuncMap
 	fns["rangeLoop"] = count
 
-	tpl := "{{ .Name | bold }} ({{ .HeatUnit | red | italic }}) {{ range rangeLoop .Peppers }}\U0001F525{{ end }}"
-
-	prompt := promptui.Select{
-		Label:         "Spicy Level",
-		Items:         peppers,
-		ItemsTemplate: tpl,
+	templates := &promptui.SelectTemplates{
+		Label:    "{{ . }} ?",
+		Active:   "\U0001F525 {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
+		Inactive: "   {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
+		Selected: "\U0001F525 {{ .Name | red | bold }}",
 	}
 
-	_, result, err := prompt.Run()
+	prompt := promptui.Select{
+		Label:     "Spicy Level",
+		Items:     peppers,
+		Templates: templates,
+	}
+
+	i, _, err := prompt.Run()
 
 	if err != nil {
 		fmt.Printf("Prompt failed %v\n", err)
 		return
 	}
 
-	fmt.Printf("You choose %s\n", result)
+	fmt.Printf("You choose number %d: %v\n", i+1, peppers[i])
 }
 
 func count(n int) []struct{} {
