@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -196,7 +195,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			}
 
 			if err != nil {
-				log.Fatal(err) //FIXME
+				output = fmt.Sprintf("%v", item)
 			}
 
 			list[i-start] = clearLine + "\r" + string(page) + " " + output
@@ -206,7 +205,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		prefix += upLine(uint(len(list))) + "\r" + clearLine
 		label, err := render(s.Templates.label, s.Label)
 		if err != nil {
-			log.Fatal(err) //FIXME
+			label = fmt.Sprintf("%v", s.Label)
 		}
 
 		p := prefix + label + downLine(1) + strings.Join(list, downLine(1))
