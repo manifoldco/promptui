@@ -27,7 +27,7 @@ func main() {
 	}
 
 	templates := &promptui.SelectTemplates{
-		Label:    "{{ . }} ?",
+		Label:    "{{ . }}?",
 		Active:   "\U0001F525 {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
 		Inactive: "   {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
 		Selected: "\U0001F525 {{ .Name | red | bold }}",

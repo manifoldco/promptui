@@ -242,7 +242,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 }
 
 func (s *Select) prepareTemplates() error {
-	if reflect.TypeOf(s.Items).Kind() != reflect.Slice {
+	if s.Items == nil || reflect.TypeOf(s.Items).Kind() != reflect.Slice {
 		return fmt.Errorf("Items %v is not a slice", s.Items)
 	}
 
@@ -256,7 +256,7 @@ func (s *Select) prepareTemplates() error {
 	}
 
 	if tpls.Label == "" {
-		tpls.Label = fmt.Sprintf(`{{ "%s" | blue }} {{.}}: `, IconInitial)
+		tpls.Label = fmt.Sprintf("%s {{.}}: ", IconInitial)
 	}
 
 	tpl, err := template.New("").Funcs(tpls.FuncMap).Parse(tpls.Label)
@@ -267,7 +267,7 @@ func (s *Select) prepareTemplates() error {
 	tpls.label = tpl
 
 	if tpls.Active == "" {
-		tpls.Active = "▸ {{ . |  underline }}"
+		tpls.Active = fmt.Sprintf("%s {{ . | underline }}", IconSelect)
 	}
 
 	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Active)

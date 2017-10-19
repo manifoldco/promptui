@@ -13,6 +13,7 @@ var (
 	IconGood    = Styler(FGGreen)("✔")
 	IconWarn    = Styler(FGYellow)("⚠")
 	IconBad     = Styler(FGRed)("✗")
+	IconSelect  = Styler(FGBold)("▸")
 )
 
 var red = Styler(FGBold, FGRed)
