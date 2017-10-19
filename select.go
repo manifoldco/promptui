@@ -21,10 +21,18 @@ const pagination = 4
 // FuncMap defines template helpers for the output. It can be extended as a
 // regular map.
 var FuncMap = template.FuncMap{
-	"red":        red,
-	"bold":       bold,
-	"faint":      faint,
-	"underlined": underlined,
+	"black":      Styler(FGBlack),
+	"red":        Styler(FGRed),
+	"green":      Styler(FGGreen),
+	"yellow":     Styler(FGYellow),
+	"blue":       Styler(FGBlue),
+	"magenta":    Styler(FGMagenta),
+	"cyan":       Styler(FGCyan),
+	"white":      Styler(FGWhite),
+	"bold":       Styler(FGBold),
+	"faint":      Styler(FGFaint),
+	"italic":     Styler(FGItalic),
+	"underlined": Styler(FGUnderline),
 }
 
 // Select represents a list for selecting a single item
@@ -171,7 +179,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 		prefix := ""
 		prefix += upLine(uint(len(list))) + "\r" + clearLine
-		p := prefix + bold(IconInitial) + " " + bold(s.label) + downLine(1) + strings.Join(list, downLine(1))
+		p := prefix + IconInitial + " " + s.label + downLine(1) + strings.Join(list, downLine(1))
 		rl.SetPrompt(p)
 		rl.Refresh()
 
