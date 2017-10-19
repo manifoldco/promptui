@@ -59,50 +59,10 @@ type Select struct {
 // Run runs the Select list. It returns the index of the selected element,
 // and its value.
 func (s *Select) Run() (int, string, error) {
-	if reflect.TypeOf(s.Items).Kind() != reflect.Slice {
-		return 0, "", fmt.Errorf("Items is not a slice")
-	}
-
-	if s.LabelTemplate == "" {
-		s.LabelTemplate = "{{.}}:"
-	}
-
-	if s.ItemsTemplate == "" {
-		s.ItemsTemplate = "{{.}}"
-	}
-
-	if s.FuncMap == nil {
-		s.FuncMap = FuncMap
-	}
-
-	tpl, err := template.New("label").Funcs(s.FuncMap).Parse(s.LabelTemplate)
+	err := s.prepareTemplates()
 	if err != nil {
 		return 0, "", err
 	}
-
-	var buf bytes.Buffer
-	err = tpl.Execute(&buf, s.Label)
-	if err != nil {
-		return 0, "", err
-	}
-
-	s.label = buf.String()
-
-	tpl, err = template.New("items").Funcs(s.FuncMap).Parse(s.ItemsTemplate)
-	if err != nil {
-		return 0, "", err
-	}
-
-	list := reflect.ValueOf(s.Items)
-	for i := 0; i < list.Len(); i++ {
-		var buf bytes.Buffer
-		err := tpl.Execute(&buf, list.Index(i))
-		if err != nil {
-			return 0, "", err
-		}
-		s.items = append(s.items, buf.String())
-	}
-
 	return s.innerRun(0, ' ')
 }
 
@@ -246,6 +206,54 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	rl.Write([]byte(showCursor))
 	return selected, out, err
+}
+
+func (s *Select) prepareTemplates() error {
+	if reflect.TypeOf(s.Items).Kind() != reflect.Slice {
+		fmt.Errorf("Items is not a slice")
+	}
+
+	if s.LabelTemplate == "" {
+		s.LabelTemplate = "{{.}}:"
+	}
+
+	if s.ItemsTemplate == "" {
+		s.ItemsTemplate = "{{.}}"
+	}
+
+	if s.FuncMap == nil {
+		s.FuncMap = FuncMap
+	}
+
+	tpl, err := template.New("label").Funcs(s.FuncMap).Parse(s.LabelTemplate)
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	err = tpl.Execute(&buf, s.Label)
+	if err != nil {
+		return err
+	}
+
+	s.label = buf.String()
+
+	tpl, err = template.New("items").Funcs(s.FuncMap).Parse(s.ItemsTemplate)
+	if err != nil {
+		return err
+	}
+
+	list := reflect.ValueOf(s.Items)
+	for i := 0; i < list.Len(); i++ {
+		var buf bytes.Buffer
+		err := tpl.Execute(&buf, list.Index(i))
+		if err != nil {
+			return err
+		}
+		s.items = append(s.items, buf.String())
+	}
+
+	return nil
 }
 
 // SelectWithAdd represents a list for selecting a single item, or selecting
