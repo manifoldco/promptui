@@ -2,7 +2,7 @@ package promptui
 
 import "testing"
 
-func TestForward(t *testing.T) {
+func TestPageDown(t *testing.T) {
 	type example struct {
 		start, end, selected, max int
 	}
@@ -36,7 +36,7 @@ func TestForward(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.scenario, func(t *testing.T) {
-			start, end, selected := forward(tc.input.start, tc.input.end, tc.input.selected, tc.input.max)
+			start, end, selected := pagedown(tc.input.start, tc.input.end, tc.input.selected, tc.input.max)
 			result := example{start: start, end: end, selected: selected}
 
 			if tc.output != result {
@@ -46,7 +46,7 @@ func TestForward(t *testing.T) {
 	}
 }
 
-func TestBackward(t *testing.T) {
+func TestPageUp(t *testing.T) {
 	type example struct {
 		start, end, selected, max int
 	}
@@ -80,7 +80,7 @@ func TestBackward(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.scenario, func(t *testing.T) {
-			start, end, selected := backward(tc.input.start, tc.input.end, tc.input.selected, tc.input.max)
+			start, end, selected := pageup(tc.input.start, tc.input.end, tc.input.selected, tc.input.max)
 			result := example{start: start, end: end, selected: selected}
 
 			if tc.output != result {

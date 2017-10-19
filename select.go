@@ -181,10 +181,10 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			default:
 				selected--
 			}
-		case ' ': // space to go forward
-			start, end, selected = forward(start, end, selected, max)
 		case 'b':
-			start, end, selected = backward(start, end, selected, max)
+			start, end, selected = pageup(start, end, selected, max)
+		case ' ': // space press
+			start, end, selected = pagedown(start, end, selected, max)
 		}
 
 		list := make([]string, end-start+1)
@@ -293,7 +293,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	return SelectedAdd, value, err
 }
 
-func forward(start, end, selected, max int) (newStart, newEnd, newSelected int) {
+func pagedown(start, end, selected, max int) (newStart, newEnd, newSelected int) {
 	newEnd = end + pagination
 
 	if newEnd > max {
@@ -315,7 +315,7 @@ func forward(start, end, selected, max int) (newStart, newEnd, newSelected int) 
 	return newStart, newEnd, newSelected
 }
 
-func backward(start, end, selected, max int) (newStart, newEnd, newSelected int) {
+func pageup(start, end, selected, max int) (newStart, newEnd, newSelected int) {
 	newStart = start - pagination
 
 	if newStart < 0 {
