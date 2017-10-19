@@ -186,16 +186,11 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			}
 
 			var output string
-			var err error
 
 			if i == selected {
-				output, err = render(s.Templates.active, item)
+				output = render(s.Templates.active, item)
 			} else {
-				output, err = render(s.Templates.inactive, item)
-			}
-
-			if err != nil {
-				output = fmt.Sprintf("%v", item)
+				output = render(s.Templates.inactive, item)
 			}
 
 			list[i-start] = clearLine + "\r" + string(page) + " " + output
@@ -203,10 +198,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 		prefix := ""
 		prefix += upLine(uint(len(list))) + "\r" + clearLine
-		label, err := render(s.Templates.label, s.Label)
-		if err != nil {
-			label = fmt.Sprintf("%v", s.Label)
-		}
+		label := render(s.Templates.label, s.Label)
 
 		p := prefix + label + downLine(1) + strings.Join(list, downLine(1))
 		rl.SetPrompt(p)
@@ -239,10 +231,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	item := s.items[selected]
 
-	output, err := render(s.Templates.selected, item)
-	if err != nil {
-		return 0, "", err
-	}
+	output := render(s.Templates.selected, item)
 
 	rl.Write([]byte(clearLine + "\r" + output + "\n"))
 	rl.Write([]byte(showCursor))
@@ -407,11 +396,11 @@ func pageup(start, end, selected, max int) (newStart, newEnd, newSelected int) {
 	return newStart, newEnd, newSelected
 }
 
-func render(tpl *template.Template, data interface{}) (string, error) {
+func render(tpl *template.Template, data interface{}) string {
 	var buf bytes.Buffer
 	err := tpl.Execute(&buf, data)
 	if err != nil {
-		return "", err
+		return fmt.Sprintf("%v", data)
 	}
-	return buf.String(), nil
+	return buf.String()
 }
