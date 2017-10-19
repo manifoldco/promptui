@@ -3,11 +3,11 @@ package promptui
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"io"
 	"os"
 	"reflect"
 	"strings"
+	"text/template"
 
 	"github.com/chzyer/readline"
 )
