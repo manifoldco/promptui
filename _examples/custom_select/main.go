@@ -26,9 +26,6 @@ func main() {
 		{Name: "Dragon’s Breath", HeatUnit: 855000, Peppers: 9},
 	}
 
-	fns := promptui.FuncMap
-	fns["rangeLoop"] = count
-
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }} ?",
 		Active:   "\U0001F525 {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
@@ -50,8 +47,4 @@ func main() {
 	}
 
 	fmt.Printf("You choose number %d: %v\n", i+1, peppers[i])
-}
-
-func count(n int) []struct{} {
-	return make([]struct{}, n)
 }
