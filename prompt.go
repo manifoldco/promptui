@@ -128,11 +128,7 @@ func (p *Prompt) Run() (string, error) {
 
 		err := validFn(string(line))
 		if err != nil {
-			if _, ok := err.(*ValidationError); ok {
-				state = IconBad
-			} else {
-				return nil, 0, false
-			}
+			state = IconBad
 		} else {
 			state = IconGood
 			if p.IsConfirm {
