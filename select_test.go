@@ -4,6 +4,10 @@ import (
 	"testing"
 )
 
+type example struct {
+	start, end, selected, max, size int
+}
+
 func TestSelectTemplateRender(t *testing.T) {
 	t.Run("when using default style", func(t *testing.T) {
 		values := []string{"Zero"}
@@ -153,10 +157,6 @@ func TestSelectTemplateRender(t *testing.T) {
 }
 
 func TestPageDown(t *testing.T) {
-	type example struct {
-		start, end, selected, max int
-	}
-
 	tcs := []struct {
 		scenario string
 		input    example
@@ -164,29 +164,35 @@ func TestPageDown(t *testing.T) {
 	}{
 		{
 			scenario: "when list is too short",
-			input:    example{start: 0, end: 2, selected: 0, max: 2},
+			input:    example{start: 0, end: 2, selected: 0, max: 2, size: 5},
 			output:   example{start: 0, end: 2, selected: 0},
 		},
 		{
 			scenario: "when list is too long enough",
-			input:    example{start: 0, end: 4, selected: 0, max: 9},
+			input:    example{start: 0, end: 4, selected: 0, max: 9, size: 5},
 			output:   example{start: 4, end: 8, selected: 4},
 		},
 		{
 			scenario: "when list is in the middle",
-			input:    example{start: 2, end: 6, selected: 2, max: 9},
+			input:    example{start: 2, end: 6, selected: 2, max: 9, size: 5},
 			output:   example{start: 5, end: 9, selected: 5},
 		},
 		{
 			scenario: "when list is almost at the end",
-			input:    example{start: 4, end: 8, selected: 7, max: 9},
+			input:    example{start: 4, end: 8, selected: 7, max: 9, size: 5},
 			output:   example{start: 5, end: 9, selected: 7},
+		},
+		{
+			scenario: "when list has a large size",
+			input:    example{start: 4, end: 8, selected: 7, max: 9, size: 10},
+			output:   example{start: 0, end: 9, selected: 7},
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.scenario, func(t *testing.T) {
-			start, end, selected := pagedown(tc.input.start, tc.input.end, tc.input.selected, tc.input.max)
+			s := &Select{Size: tc.input.size}
+			start, end, selected := s.pagedown(tc.input.start, tc.input.end, tc.input.selected, tc.input.max)
 			result := example{start: start, end: end, selected: selected}
 
 			if tc.output != result {
@@ -197,10 +203,6 @@ func TestPageDown(t *testing.T) {
 }
 
 func TestPageUp(t *testing.T) {
-	type example struct {
-		start, end, selected, max int
-	}
-
 	tcs := []struct {
 		scenario string
 		input    example
@@ -208,29 +210,35 @@ func TestPageUp(t *testing.T) {
 	}{
 		{
 			scenario: "when list is too short",
-			input:    example{start: 0, end: 2, selected: 0, max: 2},
+			input:    example{start: 0, end: 2, selected: 0, max: 2, size: 5},
 			output:   example{start: 0, end: 2, selected: 0},
 		},
 		{
 			scenario: "when list is in the beginning",
-			input:    example{start: 2, end: 6, selected: 2, max: 9},
+			input:    example{start: 2, end: 6, selected: 2, max: 9, size: 5},
 			output:   example{start: 0, end: 4, selected: 0},
 		},
 		{
 			scenario: "when list is in the middle",
-			input:    example{start: 3, end: 7, selected: 4, max: 9},
+			input:    example{start: 3, end: 7, selected: 4, max: 9, size: 5},
 			output:   example{start: 0, end: 4, selected: 0},
 		},
 		{
 			scenario: "when list is at the end",
-			input:    example{start: 5, end: 9, selected: 7, max: 9},
+			input:    example{start: 5, end: 9, selected: 7, max: 9, size: 5},
 			output:   example{start: 1, end: 5, selected: 1},
+		},
+		{
+			scenario: "when list has a large size",
+			input:    example{start: 5, end: 9, selected: 7, max: 9, size: 10},
+			output:   example{start: 0, end: 9, selected: 0},
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.scenario, func(t *testing.T) {
-			start, end, selected := pageup(tc.input.start, tc.input.end, tc.input.selected, tc.input.max)
+			s := &Select{Size: tc.input.size}
+			start, end, selected := s.pageup(tc.input.start, tc.input.end, tc.input.selected, tc.input.max)
 			result := example{start: start, end: end, selected: selected}
 
 			if tc.output != result {
