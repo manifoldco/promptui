@@ -37,6 +37,7 @@ func main() {
 		Label:     "Spicy Level",
 		Items:     peppers,
 		Templates: templates,
+		ListSize:  4,
 	}
 
 	i, _, err := prompt.Run()

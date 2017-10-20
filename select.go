@@ -15,9 +15,6 @@ import (
 // SelectedAdd is returned from SelectWithAdd when add is selected.
 const SelectedAdd = -1
 
-// TODO allow custom select height
-const pagination = 4
-
 // Select represents a list for selecting a single item
 type Select struct {
 	// Label is the value displayed on the command line prompt. It can be any
@@ -27,6 +24,10 @@ type Select struct {
 	// Items are the items to use in the list. It can be any slice type one would
 	// pass to a text/template execute, including a string slice.
 	Items interface{}
+
+	// Size is the number of items that should appear on the select before
+	// scrolling. If it is 0, defaults to 5.
+	Size int
 
 	// IsVimMode sets whether readline is using Vim mode.
 	IsVimMode bool
@@ -67,6 +68,10 @@ type SelectTemplates struct {
 // Run runs the Select list. It returns the index of the selected element,
 // and its value.
 func (s *Select) Run() (int, string, error) {
+	if s.Size == 0 {
+		s.Size = 5
+	}
+
 	err := s.prepareTemplates()
 	if err != nil {
 		return 0, "", err
@@ -92,7 +97,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	c.UniqueEditLine = true
 
 	start := 0
-	end := 4
+	end := s.height()
 	max := len(s.items) - 1
 
 	if len(s.items) <= end {
@@ -150,9 +155,9 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 				selected--
 			}
 		case 'b':
-			start, end, selected = pageup(start, end, selected, max)
+			start, end, selected = s.pageup(start, end, selected, max)
 		case ' ': // space press
-			start, end, selected = pagedown(start, end, selected, max)
+			start, end, selected = s.pagedown(start, end, selected, max)
 		}
 
 		list := make([]string, end-start+1)
@@ -337,14 +342,14 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	return SelectedAdd, value, err
 }
 
-func pagedown(start, end, selected, max int) (newStart, newEnd, newSelected int) {
-	newEnd = end + pagination
+func (s *Select) pagedown(start, end, selected, max int) (newStart, newEnd, newSelected int) {
+	newEnd = end + s.height()
 
 	if newEnd > max {
 		newEnd = max
 	}
 
-	newStart = newEnd - pagination
+	newStart = newEnd - s.height()
 
 	if newStart < 0 {
 		newStart = 0
@@ -359,14 +364,14 @@ func pagedown(start, end, selected, max int) (newStart, newEnd, newSelected int)
 	return newStart, newEnd, newSelected
 }
 
-func pageup(start, end, selected, max int) (newStart, newEnd, newSelected int) {
-	newStart = start - pagination
+func (s *Select) pageup(start, end, selected, max int) (newStart, newEnd, newSelected int) {
+	newStart = start - s.height()
 
 	if newStart < 0 {
 		newStart = 0
 	}
 
-	newEnd = newStart + pagination
+	newEnd = newStart + s.height()
 
 	if newEnd > max {
 		newEnd = max
@@ -379,6 +384,14 @@ func pageup(start, end, selected, max int) (newStart, newEnd, newSelected int) {
 	}
 
 	return newStart, newEnd, newSelected
+}
+
+func (s *Select) height() int {
+	if s.Size <= 0 {
+		return 1
+	}
+
+	return s.Size - 1
 }
 
 func render(tpl *template.Template, data interface{}) string {
