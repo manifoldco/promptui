@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/chzyer/readline"
+	"github.com/juju/ansiterm"
 )
 
 // SelectedAdd is returned from SelectWithAdd when add is selected.
@@ -409,8 +410,19 @@ func (s *Select) detailsOutput(idx int) []string {
 		return nil
 	}
 
+	var buf bytes.Buffer
+	w := ansiterm.NewTabWriter(&buf, 0, 0, 8, ' ', 0)
+
 	item := s.items[idx]
-	output := render(s.Templates.details, item)
+	err := s.Templates.details.Execute(w, item)
+	if err != nil {
+		fmt.Fprintf(w, "%v", item)
+	}
+
+	w.Flush()
+
+	output := buf.String()
+
 	lines := strings.Split(output, "\n")
 	for i, l := range lines {
 		lines[i] = clearLine + "\r" + l

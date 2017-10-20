@@ -9,6 +9,30 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/juju/ansiterm"
+  packages = [".","tabwriter"]
+  revision = "35c59b9e0fe275705a71bf5d58ee293f27efbbc4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/lunixbochs/vtclean"
+  packages = ["."]
+  revision = "d14193dfc626125c831501c1c42340b4248e1f5a"
+
+[[projects]]
+  name = "github.com/mattn/go-colorable"
+  packages = ["."]
+  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
+  version = "v0.0.9"
+
+[[projects]]
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
+  version = "v0.0.3"
+
+[[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
   revision = "686000749eaec0b8855b8eef5336cf63899fe51d"
@@ -16,6 +40,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f6d954d161826f762a11e7191eda7dd5ad93bd3d9f60fd101a72efc4f4a19938"
+  inputs-digest = "6f84edf071992192488cc76ebcfa829cb79e2105716c227592eff71640f4e7f6"
   solver-name = "gps-cdcl"
   solver-version = 1

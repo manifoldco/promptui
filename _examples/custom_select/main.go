@@ -33,16 +33,15 @@ func main() {
 		Selected: "\U0001F336 {{ .Name | red | bold }}",
 		Details: `
 --------- Pepper ----------
-{{ "Name:" | faint }} {{ .Name }}
-{{ "Heat Unit:" | faint }} {{ .HeatUnit }}
-{{ "Peppers:" | faint }} {{ .Peppers }}`,
+{{ "Name:" | faint }}	{{ .Name }}
+{{ "Heat Unit:" | faint }}	{{ .HeatUnit }}
+{{ "Peppers:" | faint }}	{{ .Peppers }}`,
 	}
 
 	prompt := promptui.Select{
 		Label:     "Spicy Level",
 		Items:     peppers,
 		Templates: templates,
-		Size:      4,
 	}
 
 	i, _, err := prompt.Run()
