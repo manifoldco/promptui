@@ -102,7 +102,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	c.UniqueEditLine = true
 
 	start := 0
-	end := s.height()
+	end := s.listHeight()
 	max := len(s.items) - 1
 
 	if len(s.items) <= end {
@@ -117,7 +117,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	}
 
 	rl.Write([]byte(hideCursor))
-	rl.Write([]byte(strings.Repeat("\n", end-start+1)))
+	rl.Write([]byte(strings.Repeat("\n", s.terminalHeight())))
 
 	counter := 0
 
@@ -166,6 +166,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		}
 
 		list := make([]string, end-start+1)
+
 		for i := start; i <= end; i++ {
 			page := ' '
 			item := s.items[i]
@@ -191,11 +192,15 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			list[i-start] = clearLine + "\r" + string(page) + " " + output
 		}
 
-		prefix := ""
-		prefix += upLine(uint(len(list))) + "\r" + clearLine
+		for _, d := range s.detailsOutput(selected) {
+			list = append(list, d)
+		}
+
+		prefix := upLine(uint(len(list))) + "\r" + clearLine
 		label := render(s.Templates.label, s.Label)
 
 		p := prefix + label + downLine(1) + strings.Join(list, downLine(1))
+
 		rl.SetPrompt(p)
 		rl.Refresh()
 
@@ -221,7 +226,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		return 0, "", err
 	}
 
-	rl.Write(bytes.Repeat([]byte(clearLine+upLine(1)), end-start+1))
+	rl.Write(bytes.Repeat([]byte(clearLine+upLine(1)), s.terminalHeight()))
 	rl.Write([]byte("\r"))
 
 	item := s.items[selected]
@@ -356,13 +361,13 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 }
 
 func (s *Select) pagedown(start, end, selected, max int) (newStart, newEnd, newSelected int) {
-	newEnd = end + s.height()
+	newEnd = end + s.listHeight()
 
 	if newEnd > max {
 		newEnd = max
 	}
 
-	newStart = newEnd - s.height()
+	newStart = newEnd - s.listHeight()
 
 	if newStart < 0 {
 		newStart = 0
@@ -378,13 +383,13 @@ func (s *Select) pagedown(start, end, selected, max int) (newStart, newEnd, newS
 }
 
 func (s *Select) pageup(start, end, selected, max int) (newStart, newEnd, newSelected int) {
-	newStart = start - s.height()
+	newStart = start - s.listHeight()
 
 	if newStart < 0 {
 		newStart = 0
 	}
 
-	newEnd = newStart + s.height()
+	newEnd = newStart + s.listHeight()
 
 	if newEnd > max {
 		newEnd = max
@@ -399,12 +404,38 @@ func (s *Select) pageup(start, end, selected, max int) (newStart, newEnd, newSel
 	return newStart, newEnd, newSelected
 }
 
-func (s *Select) height() int {
+func (s *Select) detailsOutput(idx int) []string {
+	if s.Templates.details == nil {
+		return nil
+	}
+
+	item := s.items[idx]
+	output := render(s.Templates.details, item)
+	lines := strings.Split(output, "\n")
+	for i, l := range lines {
+		lines[i] = clearLine + "\r" + l
+	}
+
+	return lines
+}
+
+func (s *Select) listHeight() int {
 	if s.Size <= 0 {
 		return 1
 	}
 
 	return s.Size - 1
+}
+
+// terminalHeight returns the number of lines required to render the label, list
+// and details. It uses the first item of the list as basis for size.
+func (s *Select) terminalHeight() int {
+	if len(s.items) == 0 {
+		return 0
+	}
+
+	details := s.detailsOutput(0)
+	return s.Size + len(details)
 }
 
 func render(tpl *template.Template, data interface{}) string {
