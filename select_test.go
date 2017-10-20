@@ -47,17 +47,28 @@ func TestSelectTemplateRender(t *testing.T) {
 
 	t.Run("when using custom style", func(t *testing.T) {
 		type pepper struct {
-			Name     string
-			HeatUnit int
-			Peppers  int
+			Name        string
+			HeatUnit    int
+			Peppers     int
+			Description string
 		}
-		peppers := []pepper{{Name: "Bell Pepper", HeatUnit: 0, Peppers: 0}}
+		peppers := []pepper{
+			{
+				Name:        "Bell Pepper",
+				HeatUnit:    0,
+				Peppers:     1,
+				Description: "Not very spicy!",
+			},
+		}
 
 		templates := &SelectTemplates{
 			Label:    "{{ . }}?",
 			Active:   "\U0001F525 {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
 			Inactive: "   {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
 			Selected: "\U0001F525 {{ .Name | red | bold }}",
+			Details: `Name: {{.Name}}
+Peppers: {{.Peppers}}
+Description: {{.Description}}`,
 		}
 
 		s := Select{
@@ -91,6 +102,12 @@ func TestSelectTemplateRender(t *testing.T) {
 
 		result = render(s.Templates.selected, s.items[0])
 		exp = "🔥 \x1b[1m\x1b[31mBell Pepper\x1b[0m"
+		if result != exp {
+			t.Errorf("Expected selected item to eq %q, got %q", exp, result)
+		}
+
+		result = render(s.Templates.details, s.items[0])
+		exp = "Name: Bell Pepper\nPeppers: 1\nDescription: Not very spicy!"
 		if result != exp {
 			t.Errorf("Expected selected item to eq %q, got %q", exp, result)
 		}

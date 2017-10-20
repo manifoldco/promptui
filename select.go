@@ -55,6 +55,10 @@ type SelectTemplates struct {
 	// Selected is a text/template for when an item was successfully selected.
 	Selected string
 
+	// Details is a text/template for when an item current active to show
+	// additional information. It can have multiple lines.
+	Details string
+
 	// FuncMap is a map of helpers for the templates. If nil, the default helpers
 	// are used.
 	FuncMap template.FuncMap
@@ -63,6 +67,7 @@ type SelectTemplates struct {
 	active   *template.Template
 	inactive *template.Template
 	selected *template.Template
+	details  *template.Template
 }
 
 // Run runs the Select list. It returns the index of the selected element,
@@ -284,8 +289,16 @@ func (s *Select) prepareTemplates() error {
 	if err != nil {
 		return err
 	}
-
 	tpls.selected = tpl
+
+	if tpls.Details != "" {
+		tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Details)
+		if err != nil {
+			return err
+		}
+
+		tpls.details = tpl
+	}
 
 	list := reflect.ValueOf(s.Items)
 	for i := 0; i < list.Len(); i++ {
