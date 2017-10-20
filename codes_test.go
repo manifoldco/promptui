@@ -17,7 +17,6 @@ func TestStyler(t *testing.T) {
 		if boldRed != expected {
 			t.Errorf("style did not match: %s != %s", boldRed, expected)
 		}
-
 	})
 
 	t.Run("should not repeat reset codes for nested styles", func(t *testing.T) {
@@ -27,6 +26,5 @@ func TestStyler(t *testing.T) {
 		if boldRed != expected {
 			t.Errorf("style did not match: %s != %s", boldRed, expected)
 		}
-
 	})
 }

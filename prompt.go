@@ -6,13 +6,16 @@ import (
 	"io"
 	"os"
 	"strings"
+	"text/template"
 
 	"github.com/chzyer/readline"
 )
 
 // Prompt represents a single line text field input.
 type Prompt struct {
-	Label string // Label is the value displayed on the command line prompt
+	// Label is the value displayed on the command line prompt. It can be any
+	// value one would pass to a text/template Execute(), including just a string.
+	Label interface{}
 
 	Default string // Default is the initial value to populate in the prompt
 
@@ -24,21 +27,58 @@ type Prompt struct {
 	// characters.
 	Mask rune
 
+	// Templates can be used to customize the prompt output. If nil is passed, the
+	// default templates are used.
+	Templates *PromptTemplates
+
 	IsConfirm bool
 	IsVimMode bool
-	Preamble  *string
-
-	// Indent will be placed before the prompt's state symbol
-	Indent string
 
 	stdin  io.Reader
 	stdout io.Writer
+}
+
+// PromptTemplates allow a prompt to be customized following stdlib
+// text/template syntax. If any field is blank a default template is used.
+type PromptTemplates struct {
+	// Prompt is a text/template for the initial prompt question.
+	Prompt string
+
+	// Prompt is a text/template if the prompt is a confirmation.
+	Confirm string
+
+	// Valid is a text/template for when the current input is valid.
+	Valid string
+
+	// Invalid is a text/template for when the current input is invalid.
+	Invalid string
+
+	// Success is a text/template for the successful result.
+	Success string
+
+	// Prompt is a text/template when there is a validation error.
+	ValidationError string
+
+	// FuncMap is a map of helpers for the templates. If nil, the default helpers
+	// are used.
+	FuncMap template.FuncMap
+
+	prompt     *template.Template
+	valid      *template.Template
+	invalid    *template.Template
+	validation *template.Template
+	success    *template.Template
 }
 
 // Run runs the prompt, returning the validated input.
 func (p *Prompt) Run() (string, error) {
 	c := &readline.Config{}
 	err := c.Init()
+	if err != nil {
+		return "", err
+	}
+
+	err = p.prepareTemplates()
 	if err != nil {
 		return "", err
 	}
@@ -60,26 +100,9 @@ func (p *Prompt) Run() (string, error) {
 		c.VimMode = true
 	}
 
-	if p.Preamble != nil {
-		fmt.Println(*p.Preamble)
-	}
+	prompt := render(p.Templates.prompt, p.Label)
 
-	suggestedAnswer := ""
-	punctuation := ":"
-	if p.IsConfirm {
-		punctuation = "?"
-		answers := "y/N"
-		if strings.ToLower(p.Default) == "y" {
-			answers = "Y/n"
-		}
-		suggestedAnswer = " " + faint("["+answers+"]")
-		p.Default = ""
-	}
-
-	state := IconInitial
-	prompt := p.Label + punctuation + suggestedAnswer + " "
-
-	c.Prompt = p.Indent + bold(state) + " " + bold(prompt)
+	c.Prompt = prompt
 	c.HistoryLimit = -1
 	c.UniqueEditLine = true
 
@@ -127,20 +150,18 @@ func (p *Prompt) Run() (string, error) {
 		}
 
 		err := validFn(string(line))
+		var prompt string
+
 		if err != nil {
-			if _, ok := err.(*ValidationError); ok {
-				state = IconBad
-			} else {
-				return nil, 0, false
-			}
+			prompt = render(p.Templates.invalid, p.Label)
 		} else {
-			state = IconGood
+			prompt = render(p.Templates.valid, p.Label)
 			if p.IsConfirm {
-				state = IconInitial
+				prompt = render(p.Templates.prompt, p.Label)
 			}
 		}
 
-		rl.SetPrompt(p.Indent + bold(state) + " " + bold(prompt))
+		rl.SetPrompt(prompt)
 		rl.Refresh()
 		wroteErr = false
 
@@ -150,21 +171,8 @@ func (p *Prompt) Run() (string, error) {
 	for {
 		out, err = rl.Readline()
 
-		var msg string
-		valid := true
 		oerr := validFn(out)
-		if oerr != nil {
-			if verr, ok := oerr.(*ValidationError); ok {
-				msg = verr.msg
-				valid = false
-				state = IconBad
-			} else {
-				return "", oerr
-			}
-		}
-
-		if valid {
-			state = IconGood
+		if oerr == nil {
 			break
 		}
 
@@ -186,7 +194,11 @@ func (p *Prompt) Run() (string, error) {
 
 		firstListen = true
 		wroteErr = true
-		rl.SetPrompt("\n" + red(">> ") + msg + upLine(1) + "\r" + p.Indent + bold(state) + " " + bold(prompt))
+
+		validation := render(p.Templates.validation, oerr)
+		prompt := render(p.Templates.invalid, p.Label)
+
+		rl.SetPrompt("\n" + validation + upLine(1) + "\r" + prompt)
 		rl.Refresh()
 	}
 
@@ -207,16 +219,105 @@ func (p *Prompt) Run() (string, error) {
 		echo = strings.Repeat(string(p.Mask), len(echo))
 	}
 
-	if p.IsConfirm {
-		if strings.ToLower(echo) != "y" {
-			state = IconBad
-			err = ErrAbort
-		} else {
-			state = IconGood
-		}
+	prompt = render(p.Templates.valid, p.Label)
+
+	if p.IsConfirm && strings.ToLower(echo) != "y" {
+		prompt = render(p.Templates.invalid, p.Label)
+		err = ErrAbort
 	}
 
-	rl.Write([]byte(p.Indent + state + " " + prompt + faint(echo) + "\n"))
+	rl.Write([]byte(prompt + render(p.Templates.success, echo) + "\n"))
 
 	return out, err
+}
+
+func (p *Prompt) prepareTemplates() error {
+	tpls := p.Templates
+	if tpls == nil {
+		tpls = &PromptTemplates{}
+	}
+
+	if tpls.FuncMap == nil {
+		tpls.FuncMap = FuncMap
+	}
+
+	bold := Styler(FGBold)
+	//faint := Styler(FGFaint)
+
+	if p.IsConfirm {
+		p.Default = ""
+		if tpls.Confirm == "" {
+			confirm := "y/N"
+			if strings.ToLower(p.Default) == "y" {
+				confirm = "Y/n"
+			}
+			tpls.Confirm = fmt.Sprintf(`{{ "%s" | bold }} {{ . | bold }}? {{ "[%s]" | faint }} `, IconInitial, confirm)
+		}
+
+		tpl, err := template.New("").Funcs(tpls.FuncMap).Parse(tpls.Confirm)
+		if err != nil {
+			return err
+		}
+
+		tpls.prompt = tpl
+	} else {
+		if tpls.Prompt == "" {
+			tpls.Prompt = fmt.Sprintf("%s {{ . | bold }}%s ", bold(IconInitial), bold(":"))
+		}
+
+		tpl, err := template.New("").Funcs(tpls.FuncMap).Parse(tpls.Prompt)
+		if err != nil {
+			return err
+		}
+
+		tpls.prompt = tpl
+	}
+
+	if tpls.Valid == "" {
+		tpls.Valid = fmt.Sprintf("%s {{ . | bold }}%s ", bold(IconGood), bold(":"))
+	}
+
+	tpl, err := template.New("").Funcs(tpls.FuncMap).Parse(tpls.Valid)
+	if err != nil {
+		return err
+	}
+
+	tpls.valid = tpl
+
+	if tpls.Invalid == "" {
+		tpls.Invalid = fmt.Sprintf("%s {{ . | bold }}%s ", bold(IconBad), bold(":"))
+	}
+
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Invalid)
+	if err != nil {
+		return err
+	}
+
+	tpls.invalid = tpl
+
+	if tpls.ValidationError == "" {
+		tpls.ValidationError = `{{ ">>" | red }} {{ . | red }}`
+	}
+
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.ValidationError)
+	if err != nil {
+		return err
+	}
+
+	tpls.validation = tpl
+
+	if tpls.Success == "" {
+		tpls.Success = `{{ . | faint }}`
+	}
+
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Success)
+	if err != nil {
+		return err
+	}
+
+	tpls.success = tpl
+
+	p.Templates = tpls
+
+	return nil
 }

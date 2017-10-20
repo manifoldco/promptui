@@ -28,9 +28,9 @@ func outputTest(mask rune, input, displayed, output, def string) func(t *testing
 			t.Errorf("wrong result: %s != %s", res, output)
 		}
 
-		expected := "\033[32m✔\033[0m test: \033[2m" + displayed + "\033[0m\n"
+		expected := "\x1b[1m\x1b[32m✔\x1b[0m \x1b[1mtest\x1b[0m\x1b[1m:\x1b[0m \x1b[2m" + displayed + "\033[0m\n"
 		if !bytes.Equal(out.Bytes(), []byte(expected)) {
-			t.Errorf("wrong output: %s != %s", out.Bytes(), expected)
+			t.Errorf("wrong output: %q != %q", out.Bytes(), expected)
 		}
 
 	}

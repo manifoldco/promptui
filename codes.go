@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 const esc = "\033["
 
 type attribute int
 
-// Forground weight/decoration attributes.
+// Foreground weight/decoration attributes.
 const (
 	reset attribute = iota
 
@@ -20,7 +21,7 @@ const (
 	FGUnderline
 )
 
-// Forground color attributes
+// Foreground color attributes
 const (
 	FGBlack attribute = iota + 30
 	FGRed
@@ -35,11 +36,28 @@ const (
 // ResetCode is the character code used to reset the terminal formatting
 var ResetCode = fmt.Sprintf("%s%dm", esc, reset)
 
-var (
+const (
 	hideCursor = esc + "?25l"
 	showCursor = esc + "?25h"
 	clearLine  = esc + "2K"
 )
+
+// FuncMap defines template helpers for the output. It can be extended as a
+// regular map.
+var FuncMap = template.FuncMap{
+	"black":     Styler(FGBlack),
+	"red":       Styler(FGRed),
+	"green":     Styler(FGGreen),
+	"yellow":    Styler(FGYellow),
+	"blue":      Styler(FGBlue),
+	"magenta":   Styler(FGMagenta),
+	"cyan":      Styler(FGCyan),
+	"white":     Styler(FGWhite),
+	"bold":      Styler(FGBold),
+	"faint":     Styler(FGFaint),
+	"italic":    Styler(FGItalic),
+	"underline": Styler(FGUnderline),
+}
 
 func upLine(n uint) string {
 	return movementCode(n, 'A')
@@ -55,7 +73,7 @@ func movementCode(n uint, code rune) string {
 
 // Styler returns a func that applies the attributes given in the Styler call
 // to the provided string.
-func Styler(attrs ...attribute) func(string) string {
+func Styler(attrs ...attribute) func(interface{}) string {
 	attrstrs := make([]string, len(attrs))
 	for i, v := range attrs {
 		attrstrs[i] = strconv.Itoa(int(v))
@@ -63,11 +81,12 @@ func Styler(attrs ...attribute) func(string) string {
 
 	seq := strings.Join(attrstrs, ";")
 
-	return func(s string) string {
+	return func(v interface{}) string {
 		end := ""
-		if !strings.HasSuffix(s, ResetCode) {
+		s, ok := v.(string)
+		if !ok || !strings.HasSuffix(s, ResetCode) {
 			end = ResetCode
 		}
-		return fmt.Sprintf("%s%sm%s%s", esc, seq, s, end)
+		return fmt.Sprintf("%s%sm%v%s", esc, seq, v, end)
 	}
 }
