@@ -6,11 +6,11 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"strings"
 	"text/template"
 
 	"github.com/chzyer/readline"
 	"github.com/juju/ansiterm"
+	"github.com/manifoldco/promptui/screenbuf"
 )
 
 // SelectedAdd is returned from SelectWithAdd when add is selected.
@@ -118,9 +118,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	}
 
 	rl.Write([]byte(hideCursor))
-	rl.Write([]byte(strings.Repeat("\n", s.terminalHeight())))
-
-	counter := 0
+	sb := screenbuf.New()
 
 	rl.Operation.ExitVimInsertMode() // Never use insert mode for selects
 
@@ -166,52 +164,46 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			start, end, selected = s.pagedown(start, end, selected, max)
 		}
 
-		list := make([]string, end-start+1)
+		label := renderBytes(s.Templates.label, s.Label)
+		sb.Write(label)
 
 		for i := start; i <= end; i++ {
-			page := ' '
+			page := " "
 			item := s.items[i]
 
 			switch i {
 			case 0:
-				page = top
-			case len(s.items) - 1:
+				page = string(top)
+			case max:
 			case start:
-				page = '↑'
+				page = "↑"
 			case end:
-				page = '↓'
+				page = "↓"
 			}
 
-			var output string
+			output := []byte(page + " ")
 
 			if i == selected {
-				output = render(s.Templates.active, item)
+				output = append(output, renderBytes(s.Templates.active, item)...)
 			} else {
-				output = render(s.Templates.inactive, item)
+				output = append(output, renderBytes(s.Templates.inactive, item)...)
 			}
 
-			list[i-start] = clearLine + "\r" + string(page) + " " + output
+			sb.Write(output)
 		}
 
-		for _, d := range s.detailsOutput(selected) {
-			list = append(list, d)
+		details := s.detailsOutput(selected)
+		for _, d := range details {
+			sb.Write(d)
 		}
 
-		prefix := upLine(uint(len(list))) + "\r" + clearLine
-		label := render(s.Templates.label, s.Label)
-
-		p := prefix + label + downLine(1) + strings.Join(list, downLine(1))
-
-		rl.SetPrompt(p)
+		sb.WriteTo(rl)
 		rl.Refresh()
-
-		counter++
 
 		return nil, 0, true
 	})
 
 	_, err = rl.Readline()
-	rl.Close()
 
 	if err != nil {
 		switch {
@@ -227,15 +219,16 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		return 0, "", err
 	}
 
-	rl.Write(bytes.Repeat([]byte(clearLine+upLine(1)), s.terminalHeight()))
-	rl.Write([]byte("\r"))
-
 	item := s.items[selected]
 
-	output := render(s.Templates.selected, item)
+	output := renderBytes(s.Templates.selected, item)
 
-	rl.Write([]byte(clearLine + "\r" + output + "\n"))
+	sb.Reset()
+	sb.Write(output)
+	sb.WriteTo(rl)
+
 	rl.Write([]byte(showCursor))
+	rl.Close()
 
 	return selected, fmt.Sprintf("%v", item), err
 }
@@ -341,6 +334,12 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			Label:     sa.Label,
 			Items:     newItems,
 			IsVimMode: sa.IsVimMode,
+			Size:      5,
+		}
+
+		err := s.prepareTemplates()
+		if err != nil {
+			return 0, "", err
 		}
 
 		selected, value, err := s.innerRun(1, '+')
@@ -376,7 +375,9 @@ func (s *Select) pagedown(start, end, selected, max int) (newStart, newEnd, newS
 
 	newSelected = newStart
 
-	if newSelected < selected {
+	if newEnd == end {
+		newSelected = newEnd
+	} else if newSelected < selected {
 		newSelected = selected
 	}
 
@@ -405,7 +406,7 @@ func (s *Select) pageup(start, end, selected, max int) (newStart, newEnd, newSel
 	return newStart, newEnd, newSelected
 }
 
-func (s *Select) detailsOutput(idx int) []string {
+func (s *Select) detailsOutput(idx int) [][]byte {
 	if s.Templates.details == nil {
 		return nil
 	}
@@ -421,14 +422,9 @@ func (s *Select) detailsOutput(idx int) []string {
 
 	w.Flush()
 
-	output := buf.String()
+	output := buf.Bytes()
 
-	lines := strings.Split(output, "\n")
-	for i, l := range lines {
-		lines[i] = clearLine + "\r" + l
-	}
-
-	return lines
+	return bytes.Split(output, []byte("\n"))
 }
 
 func (s *Select) listHeight() int {
@@ -439,22 +435,11 @@ func (s *Select) listHeight() int {
 	return s.Size - 1
 }
 
-// terminalHeight returns the number of lines required to render the label, list
-// and details. It uses the first item of the list as basis for size.
-func (s *Select) terminalHeight() int {
-	if len(s.items) == 0 {
-		return 0
-	}
-
-	details := s.detailsOutput(0)
-	return s.Size + len(details)
-}
-
-func render(tpl *template.Template, data interface{}) string {
+func renderBytes(tpl *template.Template, data interface{}) []byte {
 	var buf bytes.Buffer
 	err := tpl.Execute(&buf, data)
 	if err != nil {
-		return fmt.Sprintf("%v", data)
+		return []byte(fmt.Sprintf("%v", data))
 	}
-	return buf.String()
+	return buf.Bytes()
 }

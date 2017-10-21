@@ -182,7 +182,7 @@ func TestPageDown(t *testing.T) {
 		{
 			scenario: "when list is too short",
 			input:    example{start: 0, end: 2, selected: 0, max: 2, size: 5},
-			output:   example{start: 0, end: 2, selected: 0},
+			output:   example{start: 0, end: 2, selected: 2},
 		},
 		{
 			scenario: "when list is too long enough",
