@@ -35,7 +35,7 @@ vendor: Gopkg.lock
 #################################################
 
 test: vendor
-	@CGO_ENABLED=0 go test -v ./...
+	@CGO_ENABLED=0 go test -v $$(go list ./... | grep -v vendor)
 
 METALINT=gometalinter --tests --disable-all --vendor --deadline=5m -s data \
 	 ./... --enable
