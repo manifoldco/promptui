@@ -38,6 +38,8 @@ type Select struct {
 	// default templates are used.
 	Templates *SelectTemplates
 
+	Searcher list.Searcher
+
 	label string
 
 	list *list.List
@@ -84,6 +86,8 @@ func (s *Select) Run() (int, string, error) {
 	if err != nil {
 		return 0, "", err
 	}
+	l.Searcher = s.Searcher
+
 	s.list = l
 
 	err = s.prepareTemplates()
@@ -121,6 +125,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	rl.Operation.ExitVimInsertMode() // Never use insert mode for selects
 
 	var searchInput []rune
+	canSearch := s.Searcher != nil
 	searchMode := false
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
@@ -144,24 +149,37 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		case readline.CharPrev:
 			s.list.Prev()
 		case '/':
+			if !canSearch {
+				break
+			}
+
 			if searchMode {
 				searchMode = false
 				searchInput = nil
+				s.list.CancelSearch()
 			} else {
 				searchMode = true
 			}
-
 		case readline.CharBackspace:
-			if searchMode && len(searchInput) > 0 {
+			if !canSearch || !searchMode {
+				break
+			}
+
+			if len(searchInput) > 1 {
 				searchInput = searchInput[:len(searchInput)-1]
+				s.list.Search(string(searchInput))
+			} else {
+				searchInput = nil
+				s.list.CancelSearch()
 			}
 		case readline.CharBackward:
 			s.list.PageUp()
 		case readline.CharForward:
 			s.list.PageDown()
 		default:
-			if searchMode {
+			if canSearch && searchMode {
 				searchInput = append(searchInput, line...)
+				s.list.Search(string(searchInput))
 			}
 		}
 
@@ -169,14 +187,24 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			header := fmt.Sprintf("Search: %s", string(searchInput))
 			sb.WriteString(header)
 		} else {
-			header := fmt.Sprintf("Use the arrow keys to navigate: ↑↓←→ and / for search")
+			header := "Use the arrow keys to navigate: ↑↓←→"
+			if canSearch {
+				header += " and / for search"
+			}
 			sb.WriteString(header)
 		}
 
 		label := renderBytes(s.Templates.label, s.Label)
 		sb.Write(label)
 
-		active := s.list.Selected()
+		active, ok := s.list.Selected()
+
+		if !ok {
+			sb.WriteString("no results found")
+			sb.WriteTo(rl)
+			rl.Refresh()
+			return nil, 0, true
+		}
 
 		display := s.list.Display()
 		last := len(display) - 1
@@ -235,18 +263,23 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		return 0, "", err
 	}
 
-	item := s.list.Selected()
+	for {
+		item, ok := s.list.Selected()
+		if ok {
+			output := renderBytes(s.Templates.selected, item)
 
-	output := renderBytes(s.Templates.selected, item)
+			sb.Reset()
+			sb.Write(output)
+			sb.WriteTo(rl)
 
-	sb.Reset()
-	sb.Write(output)
-	sb.WriteTo(rl)
+			rl.Write([]byte(showCursor))
+			rl.Close()
 
-	rl.Write([]byte(showCursor))
-	rl.Close()
+			return s.list.Index(), fmt.Sprintf("%v", item), err
+		} else {
 
-	return s.list.Index(), fmt.Sprintf("%v", item), err
+		}
+	}
 }
 
 func (s *Select) prepareTemplates() error {

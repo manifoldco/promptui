@@ -3,16 +3,21 @@ package list
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
+
+type Searcher func(input string, index int) bool
 
 // List holds a collection of items that can be displayed with an N number of
 // visible items. The list can be moved up, down by one item of time or an
 // entire page (ie: visible size). It keeps track of the current selected item.
 type List struct {
-	items  []interface{}
-	cursor int // cursor holds the index of the current selected item
-	size   int // size is the number of visible options
-	start  int
+	items    []interface{}
+	scope    []interface{}
+	cursor   int // cursor holds the index of the current selected item
+	size     int // size is the number of visible options
+	start    int
+	Searcher Searcher
 }
 
 // New creates and initializes a list. Items must be a slice type and size must
@@ -26,14 +31,14 @@ func New(items interface{}, size int) (*List, error) {
 		return nil, fmt.Errorf("items %v is not a slice", items)
 	}
 
-	l := &List{size: size}
-
 	slice := reflect.ValueOf(items)
-	for i := 0; i < slice.Len(); i++ {
-		l.items = append(l.items, slice.Index(i).Interface())
+	values := make([]interface{}, slice.Len())
+
+	for i := range values {
+		values[i] = slice.Index(i).Interface()
 	}
 
-	return l, nil
+	return &List{size: size, items: values, scope: values}, nil
 }
 
 // Prev moves the visible list back one item. If the selected item is out of
@@ -49,11 +54,36 @@ func (l *List) Prev() {
 	}
 }
 
+func (l *List) Search(term string) {
+	term = strings.Trim(term, " ")
+	l.cursor = 0
+	l.start = 0
+	l.search(term)
+}
+
+func (l *List) CancelSearch() {
+	l.cursor = 0
+	l.start = 0
+	l.scope = l.items
+}
+
+func (l *List) search(term string) {
+	var scope []interface{}
+
+	for i, item := range l.items {
+		if l.Searcher(term, i) {
+			scope = append(scope, item)
+		}
+	}
+
+	l.scope = scope
+}
+
 // Next moves the visible list forward one item. If the selected item is out of
 // view, the new select item becomes the first visible item. If the list is
 // already at the bottom, nothing happens.
 func (l *List) Next() {
-	max := len(l.items) - 1
+	max := len(l.scope) - 1
 
 	if l.cursor < max {
 		l.cursor++
@@ -88,7 +118,7 @@ func (l *List) PageUp() {
 // item.
 func (l *List) PageDown() {
 	start := l.start + l.size
-	max := len(l.items) - l.size
+	max := len(l.scope) - l.size
 
 	if start > max {
 		l.start = max
@@ -99,7 +129,7 @@ func (l *List) PageDown() {
 	cursor := l.start
 
 	if cursor == l.cursor {
-		l.cursor = len(l.items) - 1
+		l.cursor = len(l.scope) - 1
 
 	} else if cursor > l.cursor {
 		l.cursor = cursor
@@ -108,7 +138,7 @@ func (l *List) PageDown() {
 
 // CanPageDown returns whether a list can still PageDown().
 func (l *List) CanPageDown() bool {
-	max := len(l.items)
+	max := len(l.scope)
 	return l.start+l.size < max
 }
 
@@ -123,18 +153,26 @@ func (l *List) Index() int {
 }
 
 // Selected returns the item currently selected.
-func (l *List) Selected() interface{} {
-	return l.items[l.cursor]
+func (l *List) Selected() (interface{}, bool) {
+	if len(l.scope) > l.cursor {
+		return l.scope[l.cursor], true
+	}
+	return nil, false
 }
 
 // Display returns a slice equal to the size of the list with the current
 // visible items.
 func (l *List) Display() []interface{} {
 	var result []interface{}
+	max := len(l.scope)
 	end := l.start + l.size
 
+	if end > max {
+		end = max
+	}
+
 	for i := l.start; i < end; i++ {
-		result = append(result, l.items[i])
+		result = append(result, l.scope[i])
 	}
 
 	return result

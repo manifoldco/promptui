@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 )
@@ -38,11 +39,20 @@ func main() {
 {{ "Peppers:" | faint }}	{{ .Peppers }}`,
 	}
 
+	searcher := func(input string, index int) bool {
+		pepper := peppers[index]
+		name := strings.Replace(strings.ToLower(pepper.Name), " ", "", -1)
+		input = strings.Replace(strings.ToLower(input), " ", "", -1)
+
+		return strings.Contains(name, input)
+	}
+
 	prompt := promptui.Select{
 		Label:     "Spicy Level",
 		Items:     peppers,
 		Templates: templates,
 		Size:      4,
+		Searcher:  searcher,
 	}
 
 	i, _, err := prompt.Run()

@@ -67,7 +67,7 @@ I've come to talk with you again
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		expect := `\u\u\cIn my brain still remains\d\cWithin the sound of silence\d\c\d`
+		expect := `\u\u\u\cIn my brain still remains\d\cWithin the sound of silence\d\c\d`
 
 		got := buf.String()
 
