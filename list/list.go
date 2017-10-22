@@ -117,6 +117,11 @@ func (l *List) CanPageUp() bool {
 	return l.start > 0
 }
 
+// Index returns the index of the item currently selected.
+func (l *List) Index() int {
+	return l.cursor
+}
+
 // Selected returns the item currently selected.
 func (l *List) Selected() interface{} {
 	return l.items[l.cursor]

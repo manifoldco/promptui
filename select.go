@@ -120,8 +120,6 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	rl.Operation.ExitVimInsertMode() // Never use insert mode for selects
 
-	selected := 0
-
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
 		if rl.Operation.IsEnableVimMode() {
 			rl.Operation.ExitVimInsertMode()
@@ -221,7 +219,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	rl.Write([]byte(showCursor))
 	rl.Close()
 
-	return selected, fmt.Sprintf("%v", item), err
+	return s.list.Index(), fmt.Sprintf("%v", item), err
 }
 
 func (s *Select) prepareTemplates() error {
