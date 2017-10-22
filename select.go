@@ -122,6 +122,9 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	rl.Operation.ExitVimInsertMode() // Never use insert mode for selects
 
+	var searchInput []rune
+	searchMode := false
+
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
 		if rl.Operation.IsEnableVimMode() {
 			rl.Operation.ExitVimInsertMode()
@@ -158,14 +161,40 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			default:
 				selected--
 			}
-		case 'b':
+		case '/':
+			if searchMode {
+				searchMode = false
+				searchInput = nil
+			} else {
+				searchMode = true
+			}
+
+		case readline.CharBackspace:
+			if searchMode && len(searchInput) > 0 {
+				searchInput = searchInput[:len(searchInput)-1]
+			}
+		case readline.CharBackward:
 			start, end, selected = s.pageup(start, end, selected, max)
-		case ' ': // space press
+		case readline.CharForward:
 			start, end, selected = s.pagedown(start, end, selected, max)
+		default:
+			if searchMode {
+				searchInput = append(searchInput, line...)
+			}
+		}
+
+		if searchMode {
+			header := fmt.Sprintf("Search: %s", string(searchInput))
+			sb.WriteString(header)
+		} else {
+			header := fmt.Sprintf("Use the arrow keys to navigate: ↑↓←→ and / for search")
+			sb.WriteString(header)
 		}
 
 		label := renderBytes(s.Templates.label, s.Label)
 		sb.Write(label)
+
+		limit := end - start
 
 		for i := start; i <= end; i++ {
 			page := " "
@@ -182,7 +211,6 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			}
 
 			output := []byte(page + " ")
-
 			if i == selected {
 				output = append(output, renderBytes(s.Templates.active, item)...)
 			} else {
