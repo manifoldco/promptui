@@ -153,20 +153,24 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 		active := s.list.Selected()
 
-		for _, item := range s.list.Display() {
+		display := s.list.Display()
+		last := len(display) - 1
+
+		for i, item := range display {
 			page := " "
 
-			/*
-				switch i {
-				case 0:
-					page = string(top)
-				case max:
-				case start:
+			switch i {
+			case 0:
+				if s.list.CanPageUp() {
 					page = "↑"
-				case end:
+				} else {
+					page = string(top)
+				}
+			case last:
+				if s.list.CanPageDown() {
 					page = "↓"
 				}
-			*/
+			}
 
 			output := []byte(page + " ")
 
@@ -312,14 +316,20 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	if len(sa.Items) > 0 {
 		newItems := append([]string{sa.AddLabel}, sa.Items...)
 
+		list, err := list.New(newItems, 5)
+		if err != nil {
+			return 0, "", err
+		}
+
 		s := Select{
 			Label:     sa.Label,
 			Items:     newItems,
 			IsVimMode: sa.IsVimMode,
 			Size:      5,
+			list:      list,
 		}
 
-		err := s.prepareTemplates()
+		err = s.prepareTemplates()
 		if err != nil {
 			return 0, "", err
 		}

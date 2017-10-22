@@ -82,7 +82,15 @@ func (l *List) PageDown() {
 	} else if cursor > l.cursor {
 		l.cursor = cursor
 	}
+}
 
+func (l *List) CanPageDown() bool {
+	max := len(l.items)
+	return l.start+l.size < max
+}
+
+func (l *List) CanPageUp() bool {
+	return l.start > 0
 }
 
 func (l *List) Selected() interface{} {
