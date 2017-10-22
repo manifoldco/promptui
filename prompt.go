@@ -321,3 +321,12 @@ func (p *Prompt) prepareTemplates() error {
 
 	return nil
 }
+
+func render(tpl *template.Template, data interface{}) string {
+	var buf bytes.Buffer
+	err := tpl.Execute(&buf, data)
+	if err != nil {
+		return fmt.Sprintf("%v", data)
+	}
+	return buf.String()
+}

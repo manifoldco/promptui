@@ -28,9 +28,14 @@ func main() {
 
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}?",
-		Active:   "\U0001F525 {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
-		Inactive: "   {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
-		Selected: "\U0001F525 {{ .Name | red | bold }}",
+		Active:   "\U0001F336 {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
+		Inactive: "  {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
+		Selected: "\U0001F336 {{ .Name | red | bold }}",
+		Details: `
+--------- Pepper ----------
+{{ "Name:" | faint }}	{{ .Name }}
+{{ "Heat Unit:" | faint }}	{{ .HeatUnit }}
+{{ "Peppers:" | faint }}	{{ .Peppers }}`,
 	}
 
 	prompt := promptui.Select{

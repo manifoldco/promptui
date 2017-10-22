@@ -6,10 +6,11 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"strings"
 	"text/template"
 
 	"github.com/chzyer/readline"
+	"github.com/juju/ansiterm"
+	"github.com/manifoldco/promptui/screenbuf"
 )
 
 // SelectedAdd is returned from SelectWithAdd when add is selected.
@@ -55,6 +56,10 @@ type SelectTemplates struct {
 	// Selected is a text/template for when an item was successfully selected.
 	Selected string
 
+	// Details is a text/template for when an item current active to show
+	// additional information. It can have multiple lines.
+	Details string
+
 	// FuncMap is a map of helpers for the templates. If nil, the default helpers
 	// are used.
 	FuncMap template.FuncMap
@@ -63,6 +68,7 @@ type SelectTemplates struct {
 	active   *template.Template
 	inactive *template.Template
 	selected *template.Template
+	details  *template.Template
 }
 
 // Run runs the Select list. It returns the index of the selected element,
@@ -97,7 +103,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	c.UniqueEditLine = true
 
 	start := 0
-	end := s.height()
+	end := s.listHeight()
 	max := len(s.items) - 1
 
 	if len(s.items) <= end {
@@ -112,9 +118,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	}
 
 	rl.Write([]byte(hideCursor))
-	rl.Write([]byte(strings.Repeat("\n", end-start+1)))
-
-	counter := 0
+	sb := screenbuf.New()
 
 	rl.Operation.ExitVimInsertMode() // Never use insert mode for selects
 
@@ -160,47 +164,46 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			start, end, selected = s.pagedown(start, end, selected, max)
 		}
 
-		list := make([]string, end-start+1)
+		label := renderBytes(s.Templates.label, s.Label)
+		sb.Write(label)
+
 		for i := start; i <= end; i++ {
-			page := ' '
+			page := " "
 			item := s.items[i]
 
 			switch i {
 			case 0:
-				page = top
-			case len(s.items) - 1:
+				page = string(top)
+			case max:
 			case start:
-				page = '↑'
+				page = "↑"
 			case end:
-				page = '↓'
+				page = "↓"
 			}
 
-			var output string
+			output := []byte(page + " ")
 
 			if i == selected {
-				output = render(s.Templates.active, item)
+				output = append(output, renderBytes(s.Templates.active, item)...)
 			} else {
-				output = render(s.Templates.inactive, item)
+				output = append(output, renderBytes(s.Templates.inactive, item)...)
 			}
 
-			list[i-start] = clearLine + "\r" + string(page) + " " + output
+			sb.Write(output)
 		}
 
-		prefix := ""
-		prefix += upLine(uint(len(list))) + "\r" + clearLine
-		label := render(s.Templates.label, s.Label)
+		details := s.detailsOutput(selected)
+		for _, d := range details {
+			sb.Write(d)
+		}
 
-		p := prefix + label + downLine(1) + strings.Join(list, downLine(1))
-		rl.SetPrompt(p)
+		sb.WriteTo(rl)
 		rl.Refresh()
-
-		counter++
 
 		return nil, 0, true
 	})
 
 	_, err = rl.Readline()
-	rl.Close()
 
 	if err != nil {
 		switch {
@@ -216,15 +219,16 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		return 0, "", err
 	}
 
-	rl.Write(bytes.Repeat([]byte(clearLine+upLine(1)), end-start+1))
-	rl.Write([]byte("\r"))
-
 	item := s.items[selected]
 
-	output := render(s.Templates.selected, item)
+	output := renderBytes(s.Templates.selected, item)
 
-	rl.Write([]byte(clearLine + "\r" + output + "\n"))
+	sb.Reset()
+	sb.Write(output)
+	sb.WriteTo(rl)
+
 	rl.Write([]byte(showCursor))
+	rl.Close()
 
 	return selected, fmt.Sprintf("%v", item), err
 }
@@ -284,8 +288,16 @@ func (s *Select) prepareTemplates() error {
 	if err != nil {
 		return err
 	}
-
 	tpls.selected = tpl
+
+	if tpls.Details != "" {
+		tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Details)
+		if err != nil {
+			return err
+		}
+
+		tpls.details = tpl
+	}
 
 	list := reflect.ValueOf(s.Items)
 	for i := 0; i < list.Len(); i++ {
@@ -322,6 +334,12 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			Label:     sa.Label,
 			Items:     newItems,
 			IsVimMode: sa.IsVimMode,
+			Size:      5,
+		}
+
+		err := s.prepareTemplates()
+		if err != nil {
+			return 0, "", err
 		}
 
 		selected, value, err := s.innerRun(1, '+')
@@ -343,13 +361,13 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 }
 
 func (s *Select) pagedown(start, end, selected, max int) (newStart, newEnd, newSelected int) {
-	newEnd = end + s.height()
+	newEnd = end + s.listHeight()
 
 	if newEnd > max {
 		newEnd = max
 	}
 
-	newStart = newEnd - s.height()
+	newStart = newEnd - s.listHeight()
 
 	if newStart < 0 {
 		newStart = 0
@@ -357,7 +375,9 @@ func (s *Select) pagedown(start, end, selected, max int) (newStart, newEnd, newS
 
 	newSelected = newStart
 
-	if newSelected < selected {
+	if newEnd == end {
+		newSelected = newEnd
+	} else if newSelected < selected {
 		newSelected = selected
 	}
 
@@ -365,13 +385,13 @@ func (s *Select) pagedown(start, end, selected, max int) (newStart, newEnd, newS
 }
 
 func (s *Select) pageup(start, end, selected, max int) (newStart, newEnd, newSelected int) {
-	newStart = start - s.height()
+	newStart = start - s.listHeight()
 
 	if newStart < 0 {
 		newStart = 0
 	}
 
-	newEnd = newStart + s.height()
+	newEnd = newStart + s.listHeight()
 
 	if newEnd > max {
 		newEnd = max
@@ -386,7 +406,28 @@ func (s *Select) pageup(start, end, selected, max int) (newStart, newEnd, newSel
 	return newStart, newEnd, newSelected
 }
 
-func (s *Select) height() int {
+func (s *Select) detailsOutput(idx int) [][]byte {
+	if s.Templates.details == nil {
+		return nil
+	}
+
+	var buf bytes.Buffer
+	w := ansiterm.NewTabWriter(&buf, 0, 0, 8, ' ', 0)
+
+	item := s.items[idx]
+	err := s.Templates.details.Execute(w, item)
+	if err != nil {
+		fmt.Fprintf(w, "%v", item)
+	}
+
+	w.Flush()
+
+	output := buf.Bytes()
+
+	return bytes.Split(output, []byte("\n"))
+}
+
+func (s *Select) listHeight() int {
 	if s.Size <= 0 {
 		return 1
 	}
@@ -394,11 +435,11 @@ func (s *Select) height() int {
 	return s.Size - 1
 }
 
-func render(tpl *template.Template, data interface{}) string {
+func renderBytes(tpl *template.Template, data interface{}) []byte {
 	var buf bytes.Buffer
 	err := tpl.Execute(&buf, data)
 	if err != nil {
-		return fmt.Sprintf("%v", data)
+		return []byte(fmt.Sprintf("%v", data))
 	}
-	return buf.String()
+	return buf.Bytes()
 }
