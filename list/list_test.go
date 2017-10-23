@@ -49,7 +49,7 @@ func TestListMovement(t *testing.T) {
 				t.Fatalf("unknown move %q", tc.move)
 			}
 
-			got := castList(t, l.Display())
+			got := castList(l.Display())
 
 			if !reflect.DeepEqual(tc.expect, got) {
 				t.Errorf("expected %q, got %q", tc.expect, got)
@@ -64,9 +64,7 @@ func TestListMovement(t *testing.T) {
 	}
 }
 
-func castList(t *testing.T, list []interface{}) []rune {
-	t.Helper()
-
+func castList(list []interface{}) []rune {
 	result := make([]rune, len(list))
 	for i, l := range list {
 		result[i] = l.(rune)
