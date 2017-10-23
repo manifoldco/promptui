@@ -202,7 +202,6 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		if !ok {
 			sb.WriteString("no results found")
 			sb.WriteTo(rl)
-			rl.Refresh()
 			return nil, 0, true
 		}
 
@@ -242,7 +241,6 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		}
 
 		sb.WriteTo(rl)
-		rl.Refresh()
 
 		return nil, 0, true
 	})
