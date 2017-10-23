@@ -151,7 +151,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 		active := s.list.Selected()
 
-		display := s.list.Display()
+		display := s.list.Items()
 		last := len(display) - 1
 
 		for i, item := range display {

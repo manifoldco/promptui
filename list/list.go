@@ -127,11 +127,16 @@ func (l *List) Selected() interface{} {
 	return l.items[l.cursor]
 }
 
-// Display returns a slice equal to the size of the list with the current
-// visible items.
-func (l *List) Display() []interface{} {
+// Items returns a slice equal to the size of the list with the current visible
+// items.
+func (l *List) Items() []interface{} {
 	var result []interface{}
+	max := len(l.items)
 	end := l.start + l.size
+
+	if end > max {
+		end = max
+	}
 
 	for i := l.start; i < end; i++ {
 		result = append(result, l.items[i])
