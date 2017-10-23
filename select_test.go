@@ -26,19 +26,19 @@ func TestSelectTemplateRender(t *testing.T) {
 			t.Errorf("Expected label to eq %q, got %q", exp, result)
 		}
 
-		result = render(s.Templates.active, s.items[0])
+		result = render(s.Templates.active, values[0])
 		exp = "\x1b[1m▸\x1b[0m \x1b[4mZero\x1b[0m"
 		if result != exp {
 			t.Errorf("Expected active item to eq %q, got %q", exp, result)
 		}
 
-		result = render(s.Templates.inactive, s.items[0])
+		result = render(s.Templates.inactive, values[0])
 		exp = "  Zero"
 		if result != exp {
 			t.Errorf("Expected inactive item to eq %q, got %q", exp, result)
 		}
 
-		result = render(s.Templates.selected, s.items[0])
+		result = render(s.Templates.selected, values[0])
 		exp = "\x1b[32m\x1b[32m✔\x1b[0m \x1b[2mZero\x1b[0m"
 		if result != exp {
 			t.Errorf("Expected selected item to eq %q, got %q", exp, result)
@@ -88,25 +88,25 @@ Description: {{.Description}}`,
 			t.Errorf("Expected label to eq %q, got %q", exp, result)
 		}
 
-		result = render(s.Templates.active, s.items[0])
+		result = render(s.Templates.active, peppers[0])
 		exp = "🔥 \x1b[1mBell Pepper\x1b[0m (\x1b[3m\x1b[31m0\x1b[0m)"
 		if result != exp {
 			t.Errorf("Expected active item to eq %q, got %q", exp, result)
 		}
 
-		result = render(s.Templates.inactive, s.items[0])
+		result = render(s.Templates.inactive, peppers[0])
 		exp = "   \x1b[1mBell Pepper\x1b[0m (\x1b[3m\x1b[31m0\x1b[0m)"
 		if result != exp {
 			t.Errorf("Expected inactive item to eq %q, got %q", exp, result)
 		}
 
-		result = render(s.Templates.selected, s.items[0])
+		result = render(s.Templates.selected, peppers[0])
 		exp = "🔥 \x1b[1m\x1b[31mBell Pepper\x1b[0m"
 		if result != exp {
 			t.Errorf("Expected selected item to eq %q, got %q", exp, result)
 		}
 
-		result = render(s.Templates.details, s.items[0])
+		result = render(s.Templates.details, peppers[0])
 		exp = "Name: Bell Pepper\nPeppers: 1\nDescription: Not very spicy!"
 		if result != exp {
 			t.Errorf("Expected selected item to eq %q, got %q", exp, result)
@@ -171,96 +171,4 @@ Description: {{.Description}}`,
 			t.Errorf("Expected label to eq %q, got %q", exp, result)
 		}
 	})
-}
-
-func TestPageDown(t *testing.T) {
-	tcs := []struct {
-		scenario string
-		input    example
-		output   example
-	}{
-		{
-			scenario: "when list is too short",
-			input:    example{start: 0, end: 2, selected: 0, max: 2, size: 5},
-			output:   example{start: 0, end: 2, selected: 2},
-		},
-		{
-			scenario: "when list is too long enough",
-			input:    example{start: 0, end: 4, selected: 0, max: 9, size: 5},
-			output:   example{start: 4, end: 8, selected: 4},
-		},
-		{
-			scenario: "when list is in the middle",
-			input:    example{start: 2, end: 6, selected: 2, max: 9, size: 5},
-			output:   example{start: 5, end: 9, selected: 5},
-		},
-		{
-			scenario: "when list is almost at the end",
-			input:    example{start: 4, end: 8, selected: 7, max: 9, size: 5},
-			output:   example{start: 5, end: 9, selected: 7},
-		},
-		{
-			scenario: "when list has a large size",
-			input:    example{start: 4, end: 8, selected: 7, max: 9, size: 10},
-			output:   example{start: 0, end: 9, selected: 7},
-		},
-	}
-
-	for _, tc := range tcs {
-		t.Run(tc.scenario, func(t *testing.T) {
-			s := &Select{Size: tc.input.size}
-			start, end, selected := s.pagedown(tc.input.start, tc.input.end, tc.input.selected, tc.input.max)
-			result := example{start: start, end: end, selected: selected}
-
-			if tc.output != result {
-				t.Errorf("expected %v to equal %v", tc.output, result)
-			}
-		})
-	}
-}
-
-func TestPageUp(t *testing.T) {
-	tcs := []struct {
-		scenario string
-		input    example
-		output   example
-	}{
-		{
-			scenario: "when list is too short",
-			input:    example{start: 0, end: 2, selected: 0, max: 2, size: 5},
-			output:   example{start: 0, end: 2, selected: 0},
-		},
-		{
-			scenario: "when list is in the beginning",
-			input:    example{start: 2, end: 6, selected: 2, max: 9, size: 5},
-			output:   example{start: 0, end: 4, selected: 0},
-		},
-		{
-			scenario: "when list is in the middle",
-			input:    example{start: 3, end: 7, selected: 4, max: 9, size: 5},
-			output:   example{start: 0, end: 4, selected: 0},
-		},
-		{
-			scenario: "when list is at the end",
-			input:    example{start: 5, end: 9, selected: 7, max: 9, size: 5},
-			output:   example{start: 1, end: 5, selected: 1},
-		},
-		{
-			scenario: "when list has a large size",
-			input:    example{start: 5, end: 9, selected: 7, max: 9, size: 10},
-			output:   example{start: 0, end: 9, selected: 0},
-		},
-	}
-
-	for _, tc := range tcs {
-		t.Run(tc.scenario, func(t *testing.T) {
-			s := &Select{Size: tc.input.size}
-			start, end, selected := s.pageup(tc.input.start, tc.input.end, tc.input.selected, tc.input.max)
-			result := example{start: start, end: end, selected: selected}
-
-			if tc.output != result {
-				t.Errorf("expected %v to equal %v", tc.output, result)
-			}
-		})
-	}
 }

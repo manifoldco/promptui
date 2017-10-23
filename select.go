@@ -10,6 +10,7 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/juju/ansiterm"
+	"github.com/manifoldco/promptui/list"
 	"github.com/manifoldco/promptui/screenbuf"
 )
 
@@ -38,7 +39,8 @@ type Select struct {
 	Templates *SelectTemplates
 
 	label string
-	items []interface{}
+
+	list *list.List
 }
 
 // SelectTemplates allow a select prompt to be customized following stdlib
@@ -78,7 +80,13 @@ func (s *Select) Run() (int, string, error) {
 		s.Size = 5
 	}
 
-	err := s.prepareTemplates()
+	l, err := list.New(s.Items, s.Size)
+	if err != nil {
+		return 0, "", err
+	}
+	s.list = l
+
+	err = s.prepareTemplates()
 	if err != nil {
 		return 0, "", err
 	}
@@ -101,16 +109,6 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	c.HistoryLimit = -1
 	c.UniqueEditLine = true
-
-	start := 0
-	end := s.listHeight()
-	max := len(s.items) - 1
-
-	if len(s.items) <= end {
-		end = max
-	}
-
-	selected := starting
 
 	rl, err := readline.NewEx(c)
 	if err != nil {
@@ -139,51 +137,42 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		case readline.CharEnter:
 			return nil, 0, true
 		case readline.CharNext:
-			switch selected {
-			case max:
-			case end:
-				start++
-				end++
-				fallthrough
-			default:
-				selected++
-			}
+			s.list.Next()
 		case readline.CharPrev:
-			switch selected {
-			case 0:
-			case start:
-				start--
-				end--
-				fallthrough
-			default:
-				selected--
-			}
-		case 'b':
-			start, end, selected = s.pageup(start, end, selected, max)
+			s.list.Prev()
 		case ' ': // space press
-			start, end, selected = s.pagedown(start, end, selected, max)
+			s.list.PageDown()
+		case 'b':
+			s.list.PageUp()
 		}
 
 		label := renderBytes(s.Templates.label, s.Label)
 		sb.Write(label)
 
-		for i := start; i <= end; i++ {
+		active := s.list.Selected()
+
+		display := s.list.Display()
+		last := len(display) - 1
+
+		for i, item := range display {
 			page := " "
-			item := s.items[i]
 
 			switch i {
 			case 0:
-				page = string(top)
-			case max:
-			case start:
-				page = "↑"
-			case end:
-				page = "↓"
+				if s.list.CanPageUp() {
+					page = "↑"
+				} else {
+					page = string(top)
+				}
+			case last:
+				if s.list.CanPageDown() {
+					page = "↓"
+				}
 			}
 
 			output := []byte(page + " ")
 
-			if i == selected {
+			if item == active {
 				output = append(output, renderBytes(s.Templates.active, item)...)
 			} else {
 				output = append(output, renderBytes(s.Templates.inactive, item)...)
@@ -192,7 +181,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			sb.Write(output)
 		}
 
-		details := s.detailsOutput(selected)
+		details := s.detailsOutput(active)
 		for _, d := range details {
 			sb.Write(d)
 		}
@@ -219,7 +208,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		return 0, "", err
 	}
 
-	item := s.items[selected]
+	item := s.list.Selected()
 
 	output := renderBytes(s.Templates.selected, item)
 
@@ -230,7 +219,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	rl.Write([]byte(showCursor))
 	rl.Close()
 
-	return selected, fmt.Sprintf("%v", item), err
+	return s.list.Index(), fmt.Sprintf("%v", item), err
 }
 
 func (s *Select) prepareTemplates() error {
@@ -299,11 +288,6 @@ func (s *Select) prepareTemplates() error {
 		tpls.details = tpl
 	}
 
-	list := reflect.ValueOf(s.Items)
-	for i := 0; i < list.Len(); i++ {
-		s.items = append(s.items, list.Index(i))
-	}
-
 	s.Templates = tpls
 
 	return nil
@@ -330,14 +314,20 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	if len(sa.Items) > 0 {
 		newItems := append([]string{sa.AddLabel}, sa.Items...)
 
+		list, err := list.New(newItems, 5)
+		if err != nil {
+			return 0, "", err
+		}
+
 		s := Select{
 			Label:     sa.Label,
 			Items:     newItems,
 			IsVimMode: sa.IsVimMode,
 			Size:      5,
+			list:      list,
 		}
 
-		err := s.prepareTemplates()
+		err = s.prepareTemplates()
 		if err != nil {
 			return 0, "", err
 		}
@@ -360,53 +350,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	return SelectedAdd, value, err
 }
 
-func (s *Select) pagedown(start, end, selected, max int) (newStart, newEnd, newSelected int) {
-	newEnd = end + s.listHeight()
-
-	if newEnd > max {
-		newEnd = max
-	}
-
-	newStart = newEnd - s.listHeight()
-
-	if newStart < 0 {
-		newStart = 0
-	}
-
-	newSelected = newStart
-
-	if newEnd == end {
-		newSelected = newEnd
-	} else if newSelected < selected {
-		newSelected = selected
-	}
-
-	return newStart, newEnd, newSelected
-}
-
-func (s *Select) pageup(start, end, selected, max int) (newStart, newEnd, newSelected int) {
-	newStart = start - s.listHeight()
-
-	if newStart < 0 {
-		newStart = 0
-	}
-
-	newEnd = newStart + s.listHeight()
-
-	if newEnd > max {
-		newEnd = max
-	}
-
-	newSelected = newStart
-
-	if newSelected > selected {
-		newSelected = selected
-	}
-
-	return newStart, newEnd, newSelected
-}
-
-func (s *Select) detailsOutput(idx int) [][]byte {
+func (s *Select) detailsOutput(item interface{}) [][]byte {
 	if s.Templates.details == nil {
 		return nil
 	}
@@ -414,7 +358,6 @@ func (s *Select) detailsOutput(idx int) [][]byte {
 	var buf bytes.Buffer
 	w := ansiterm.NewTabWriter(&buf, 0, 0, 8, ' ', 0)
 
-	item := s.items[idx]
 	err := s.Templates.details.Execute(w, item)
 	if err != nil {
 		fmt.Fprintf(w, "%v", item)
@@ -425,14 +368,6 @@ func (s *Select) detailsOutput(idx int) [][]byte {
 	output := buf.Bytes()
 
 	return bytes.Split(output, []byte("\n"))
-}
-
-func (s *Select) listHeight() int {
-	if s.Size <= 0 {
-		return 1
-	}
-
-	return s.Size - 1
 }
 
 func renderBytes(tpl *template.Template, data interface{}) []byte {

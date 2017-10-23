@@ -85,7 +85,7 @@ func (s *ScreenBuf) WriteString(str string) (int, error) {
 // during the write is also returned.
 func (s *ScreenBuf) WriteTo(w io.Writer) (int64, error) {
 	if s.flush {
-		for i := 0; i < s.cursor; i++ {
+		for range s.lines {
 			_, err := s.buf.Write(moveUp)
 			if err != nil {
 				return 0, err
@@ -112,11 +112,9 @@ func (s *ScreenBuf) WriteTo(w io.Writer) (int64, error) {
 				return 0, err
 			}
 		} else {
-			_, err := s.buf.Write(line)
-			if err != nil {
-				return 0, err
-			}
-			_, err = s.buf.Write([]byte("\n"))
+			l := append(line, []byte("\n")...)
+
+			_, err := s.buf.Write(l)
 			if err != nil {
 				return 0, err
 			}
