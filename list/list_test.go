@@ -49,7 +49,7 @@ func TestListMovement(t *testing.T) {
 				t.Fatalf("unknown move %q", tc.move)
 			}
 
-			got := castList(l.Display())
+			got := castList(l.Items())
 
 			if !reflect.DeepEqual(tc.expect, got) {
 				t.Errorf("expected %q, got %q", tc.expect, got)
