@@ -131,7 +131,12 @@ func (l *List) Selected() interface{} {
 // visible items.
 func (l *List) Display() []interface{} {
 	var result []interface{}
+	max := len(l.items)
 	end := l.start + l.size
+
+	if end > max {
+		end = max
+	}
 
 	for i := l.start; i < end; i++ {
 		result = append(result, l.items[i])
