@@ -43,6 +43,10 @@ func (s *ScreenBuf) Reset() {
 // the top. Lines with \r or \n will fail since they can interfere with the
 // terminal ability to move between lines.
 func (s *ScreenBuf) Write(b []byte) (int, error) {
+	if bytes.ContainsAny(b, "\r\n") {
+		return 0, fmt.Errorf("%q should not contain either \\r or \\n", b)
+	}
+
 	if s.reset {
 		for i := 0; i < s.height; i++ {
 			_, err := s.buf.Write(moveUp)
@@ -89,10 +93,11 @@ func (s *ScreenBuf) Write(b []byte) (int, error) {
 		s.cursor++
 		return n, nil
 	default:
-		return 0, fmt.Errorf("Invalid write cursor position (%d) exceeded line height: %d, cursor: %d", s.cursor, s.height)
+		return 0, fmt.Errorf("Invalid write cursor position (%d) exceeded line height: %d", s.cursor, s.height)
 	}
 }
 
+// Flush writes any buffered data to the underlying io.Writer.
 func (s *ScreenBuf) Flush() error {
 	for i := s.cursor; i < s.height; i++ {
 		if i < s.height {
@@ -130,12 +135,4 @@ func (s *ScreenBuf) Flush() error {
 // Check ScreenBuf.Write() for a detailed explanation of the function behaviour.
 func (s *ScreenBuf) WriteString(str string) (int, error) {
 	return s.Write([]byte(str))
-}
-
-// WriteTo writes data to w until the buffer is drained or an error occurs. The
-// return value n is the number of bytes written; it always fits into an int,
-// but it is int64 to match the io.WriterTo interface. Any error encountered
-// during the write is also returned.
-func (s *ScreenBuf) WriteTo(w io.Writer) (int64, error) {
-	return s.buf.WriteTo(w)
 }
