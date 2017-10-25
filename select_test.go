@@ -129,26 +129,6 @@ Description: {{.Description}}`,
 		}
 	})
 
-	t.Run("when items is nil", func(t *testing.T) {
-		s := Select{}
-
-		err := s.prepareTemplates()
-		if err == nil {
-			t.Fatalf("Expected error got none")
-		}
-	})
-
-	t.Run("when items is not a slice", func(t *testing.T) {
-		s := Select{
-			Items: "1,2,3",
-		}
-
-		err := s.prepareTemplates()
-		if err == nil {
-			t.Fatalf("Expected error got none")
-		}
-	})
-
 	t.Run("when a template render fails", func(t *testing.T) {
 		templates := &SelectTemplates{
 			Label: "{{ .InvalidName }}",
