@@ -2,10 +2,6 @@
 
 package promptui
 
-var (
-	faint = Styler(FGFaint)
-)
-
 // Icons used for displaying prompts or status
 var (
 	IconInitial = Styler(FGBlue)("?")
