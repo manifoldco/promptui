@@ -116,7 +116,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	}
 
 	rl.Write([]byte(hideCursor))
-	sb := screenbuf.New()
+	sb := screenbuf.New(rl)
 
 	rl.Operation.ExitVimInsertMode() // Never use insert mode for selects
 
@@ -186,8 +186,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			sb.Write(d)
 		}
 
-		sb.WriteTo(rl)
-		rl.Refresh()
+		sb.Flush()
 
 		return nil, 0, true
 	})
@@ -214,7 +213,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	sb.Reset()
 	sb.Write(output)
-	sb.WriteTo(rl)
+	sb.Flush()
 
 	rl.Write([]byte(showCursor))
 	rl.Close()
