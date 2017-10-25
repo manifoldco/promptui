@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"text/template"
 
 	"github.com/chzyer/readline"
@@ -149,12 +148,10 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		label := renderBytes(s.Templates.label, s.Label)
 		sb.Write(label)
 
-		active := s.list.Selected()
+		items, idx := s.list.Items()
+		last := len(items) - 1
 
-		display := s.list.Items()
-		last := len(display) - 1
-
-		for i, item := range display {
+		for i, item := range items {
 			page := " "
 
 			switch i {
@@ -172,7 +169,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 			output := []byte(page + " ")
 
-			if item == active {
+			if i == idx {
 				output = append(output, renderBytes(s.Templates.active, item)...)
 			} else {
 				output = append(output, renderBytes(s.Templates.inactive, item)...)
@@ -180,6 +177,8 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 			sb.Write(output)
 		}
+
+		active := items[idx]
 
 		details := s.detailsOutput(active)
 		for _, d := range details {
@@ -207,7 +206,8 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		return 0, "", err
 	}
 
-	item := s.list.Selected()
+	items, idx := s.list.Items()
+	item := items[idx]
 
 	output := renderBytes(s.Templates.selected, item)
 
@@ -222,10 +222,6 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 }
 
 func (s *Select) prepareTemplates() error {
-	if s.Items == nil || reflect.TypeOf(s.Items).Kind() != reflect.Slice {
-		return fmt.Errorf("Items %v is not a slice", s.Items)
-	}
-
 	tpls := s.Templates
 	if tpls == nil {
 		tpls = &SelectTemplates{}

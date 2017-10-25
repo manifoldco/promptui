@@ -30,7 +30,8 @@ func New(items interface{}, size int) (*List, error) {
 
 	slice := reflect.ValueOf(items)
 	for i := 0; i < slice.Len(); i++ {
-		l.items = append(l.items, slice.Index(i).Interface())
+		item := slice.Index(i).Interface()
+		l.items = append(l.items, item)
 	}
 
 	return l, nil
@@ -122,14 +123,9 @@ func (l *List) Index() int {
 	return l.cursor
 }
 
-// Selected returns the item currently selected.
-func (l *List) Selected() interface{} {
-	return l.items[l.cursor]
-}
-
 // Items returns a slice equal to the size of the list with the current visible
-// items.
-func (l *List) Items() []interface{} {
+// items and the index of the active item in this list.
+func (l *List) Items() ([]interface{}, int) {
 	var result []interface{}
 	max := len(l.items)
 	end := l.start + l.size
@@ -138,9 +134,15 @@ func (l *List) Items() []interface{} {
 		end = max
 	}
 
-	for i := l.start; i < end; i++ {
+	active := 0
+
+	for i, j := l.start, 0; i < end; i, j = i+1, j+1 {
+		if l.cursor == i {
+			active = j
+		}
+
 		result = append(result, l.items[i])
 	}
 
-	return result
+	return result, active
 }
