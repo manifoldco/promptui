@@ -63,10 +63,6 @@ func upLine(n uint) string {
 	return movementCode(n, 'A')
 }
 
-func downLine(n uint) string {
-	return movementCode(n, 'B')
-}
-
 func movementCode(n uint, code rune) string {
 	return esc + strconv.FormatUint(uint64(n), 10) + string(code)
 }
