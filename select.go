@@ -120,24 +120,12 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	rl.Operation.ExitVimInsertMode() // Never use insert mode for selects
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
-		if rl.Operation.IsEnableVimMode() {
-			rl.Operation.ExitVimInsertMode()
-			// Remap j and k for down/up selections immediately after an
-			// `i` press
-			switch key {
-			case 'j':
-				key = readline.CharNext
-			case 'k':
-				key = readline.CharPrev
-			}
-		}
-
 		switch key {
 		case readline.CharEnter:
 			return nil, 0, true
-		case readline.CharNext:
+		case readline.CharNext, 'j':
 			s.list.Next()
-		case readline.CharPrev:
+		case readline.CharPrev, 'k':
 			s.list.Prev()
 		case ' ': // space press
 			s.list.PageDown()
