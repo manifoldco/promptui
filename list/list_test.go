@@ -89,6 +89,26 @@ func TestListMovement(t *testing.T) {
 	}
 }
 
+func TestListPageDown(t *testing.T) {
+	t.Run("when list has fewer items than page size", func(t *testing.T) {
+		letters := []rune{'a', 'b'}
+		l, err := New(letters, 4)
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+
+		l.PageDown()
+		list, idx := l.Items()
+
+		expected := 'b'
+		selected := list[idx]
+
+		if selected != expected {
+			t.Errorf("expected selected to be %q, got %q", selected, selected)
+		}
+	})
+}
+
 func castList(list []interface{}) []rune {
 	result := make([]rune, len(list))
 	for i, l := range list {
