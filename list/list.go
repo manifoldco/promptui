@@ -91,9 +91,12 @@ func (l *List) PageDown() {
 	start := l.start + l.size
 	max := len(l.items) - l.size
 
-	if start > max {
+	switch {
+	case len(l.items) < l.size:
+		l.start = 0
+	case start > max:
 		l.start = max
-	} else {
+	default:
 		l.start = start
 	}
 
