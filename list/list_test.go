@@ -104,7 +104,7 @@ func TestListPageDown(t *testing.T) {
 		selected := list[idx]
 
 		if selected != expected {
-			t.Errorf("expected selected to be %q, got %q", selected, selected)
+			t.Errorf("expected selected to be %q, got %q", expected, selected)
 		}
 	})
 }
