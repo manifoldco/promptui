@@ -19,6 +19,7 @@ const (
 	FGFaint
 	FGItalic
 	FGUnderline
+	FGBlink
 )
 
 // Foreground color attributes
