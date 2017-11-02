@@ -152,11 +152,11 @@ func (p *Prompt) Run() (string, error) {
 		var prompt []byte
 
 		if err != nil {
-			prompt = renderBytes(p.Templates.invalid, p.Label)
+			prompt = render(p.Templates.invalid, p.Label)
 		} else {
-			prompt = renderBytes(p.Templates.valid, p.Label)
+			prompt = render(p.Templates.valid, p.Label)
 			if p.IsConfirm {
-				prompt = renderBytes(p.Templates.prompt, p.Label)
+				prompt = render(p.Templates.prompt, p.Label)
 			}
 		}
 
@@ -171,7 +171,7 @@ func (p *Prompt) Run() (string, error) {
 		sb.Write(prompt)
 
 		if inputErr != nil {
-			validation := renderBytes(p.Templates.validation, inputErr)
+			validation := render(p.Templates.validation, inputErr)
 			sb.Write(validation)
 			inputErr = nil
 		}
@@ -217,11 +217,11 @@ func (p *Prompt) Run() (string, error) {
 		echo = strings.Repeat(string(p.Mask), len(echo))
 	}
 
-	prompt := renderBytes(p.Templates.valid, p.Label)
+	prompt := render(p.Templates.valid, p.Label)
 	prompt = append(prompt, []byte(echo)...)
 
 	if p.IsConfirm && strings.ToLower(echo) != "y" {
-		prompt = renderBytes(p.Templates.invalid, p.Label)
+		prompt = render(p.Templates.invalid, p.Label)
 		err = ErrAbort
 	}
 

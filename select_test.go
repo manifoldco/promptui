@@ -16,25 +16,25 @@ func TestSelectTemplateRender(t *testing.T) {
 			t.Fatalf("Unexpected error preparing templates %v", err)
 		}
 
-		result := string(renderBytes(s.Templates.label, s.Label))
+		result := string(render(s.Templates.label, s.Label))
 		exp := "\x1b[34m?\x1b[0m Select Number: "
 		if result != exp {
 			t.Errorf("Expected label to eq %q, got %q", exp, result)
 		}
 
-		result = string(renderBytes(s.Templates.active, values[0]))
+		result = string(render(s.Templates.active, values[0]))
 		exp = "\x1b[1m▸\x1b[0m \x1b[4mZero\x1b[0m"
 		if result != exp {
 			t.Errorf("Expected active item to eq %q, got %q", exp, result)
 		}
 
-		result = string(renderBytes(s.Templates.inactive, values[0]))
+		result = string(render(s.Templates.inactive, values[0]))
 		exp = "  Zero"
 		if result != exp {
 			t.Errorf("Expected inactive item to eq %q, got %q", exp, result)
 		}
 
-		result = string(renderBytes(s.Templates.selected, values[0]))
+		result = string(render(s.Templates.selected, values[0]))
 		exp = "\x1b[32m\x1b[32m✔\x1b[0m \x1b[2mZero\x1b[0m"
 		if result != exp {
 			t.Errorf("Expected selected item to eq %q, got %q", exp, result)
@@ -78,31 +78,31 @@ Description: {{.Description}}`,
 			t.Fatalf("Unexpected error preparing templates %v", err)
 		}
 
-		result := string(renderBytes(s.Templates.label, s.Label))
+		result := string(render(s.Templates.label, s.Label))
 		exp := "Spicy Level?"
 		if result != exp {
 			t.Errorf("Expected label to eq %q, got %q", exp, result)
 		}
 
-		result = string(renderBytes(s.Templates.active, peppers[0]))
+		result = string(render(s.Templates.active, peppers[0]))
 		exp = "🔥 \x1b[1mBell Pepper\x1b[0m (\x1b[3m\x1b[31m0\x1b[0m)"
 		if result != exp {
 			t.Errorf("Expected active item to eq %q, got %q", exp, result)
 		}
 
-		result = string(renderBytes(s.Templates.inactive, peppers[0]))
+		result = string(render(s.Templates.inactive, peppers[0]))
 		exp = "   \x1b[1mBell Pepper\x1b[0m (\x1b[3m\x1b[31m0\x1b[0m)"
 		if result != exp {
 			t.Errorf("Expected inactive item to eq %q, got %q", exp, result)
 		}
 
-		result = string(renderBytes(s.Templates.selected, peppers[0]))
+		result = string(render(s.Templates.selected, peppers[0]))
 		exp = "🔥 \x1b[1m\x1b[31mBell Pepper\x1b[0m"
 		if result != exp {
 			t.Errorf("Expected selected item to eq %q, got %q", exp, result)
 		}
 
-		result = string(renderBytes(s.Templates.details, peppers[0]))
+		result = string(render(s.Templates.details, peppers[0]))
 		exp = "Name: Bell Pepper\nPeppers: 1\nDescription: Not very spicy!"
 		if result != exp {
 			t.Errorf("Expected selected item to eq %q, got %q", exp, result)
@@ -141,7 +141,7 @@ Description: {{.Description}}`,
 			t.Fatalf("Unexpected error preparing templates %v", err)
 		}
 
-		result := string(renderBytes(s.Templates.label, s.Label))
+		result := string(render(s.Templates.label, s.Label))
 		exp := "{Pepper}"
 		if result != exp {
 			t.Errorf("Expected label to eq %q, got %q", exp, result)

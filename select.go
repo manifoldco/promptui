@@ -133,7 +133,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			s.list.PageUp()
 		}
 
-		label := renderBytes(s.Templates.label, s.Label)
+		label := render(s.Templates.label, s.Label)
 		sb.Write(label)
 
 		items, idx := s.list.Items()
@@ -158,9 +158,9 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			output := []byte(page + " ")
 
 			if i == idx {
-				output = append(output, renderBytes(s.Templates.active, item)...)
+				output = append(output, render(s.Templates.active, item)...)
 			} else {
-				output = append(output, renderBytes(s.Templates.inactive, item)...)
+				output = append(output, render(s.Templates.inactive, item)...)
 			}
 
 			sb.Write(output)
@@ -197,7 +197,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	items, idx := s.list.Items()
 	item := items[idx]
 
-	output := renderBytes(s.Templates.selected, item)
+	output := render(s.Templates.selected, item)
 
 	sb.Reset()
 	sb.Write(output)
@@ -353,7 +353,7 @@ func (s *Select) detailsOutput(item interface{}) [][]byte {
 	return bytes.Split(output, []byte("\n"))
 }
 
-func renderBytes(tpl *template.Template, data interface{}) []byte {
+func render(tpl *template.Template, data interface{}) []byte {
 	var buf bytes.Buffer
 	err := tpl.Execute(&buf, data)
 	if err != nil {
