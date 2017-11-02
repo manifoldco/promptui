@@ -1,15 +1,16 @@
 package promptui
 
 import (
-	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"text/template"
 
 	"github.com/chzyer/readline"
+	"github.com/manifoldco/promptui/screenbuf"
 )
+
+const cursor = "\u258f"
 
 // Prompt represents a single line text field input.
 type Prompt struct {
@@ -100,27 +101,16 @@ func (p *Prompt) Run() (string, error) {
 		c.VimMode = true
 	}
 
-	prompt := render(p.Templates.prompt, p.Label)
-
-	c.Prompt = prompt
 	c.HistoryLimit = -1
 	c.UniqueEditLine = true
-
-	firstListen := true
-	wroteErr := false
-	caughtup := true
-	var out string
-
-	if p.Default != "" {
-		caughtup = false
-		out = p.Default
-		c.Stdin = io.MultiReader(bytes.NewBuffer([]byte(out)), os.Stdin)
-	}
 
 	rl, err := readline.NewEx(c)
 	if err != nil {
 		return "", err
 	}
+
+	rl.Write([]byte(hideCursor))
+	sb := screenbuf.New(rl)
 
 	validFn := func(x string) error {
 		return nil
@@ -130,27 +120,36 @@ func (p *Prompt) Run() (string, error) {
 		validFn = p.Validate
 	}
 
+	var inputErr error
+	input := p.Default
+	eraseDefault := input != ""
+
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
-		if key == readline.CharEnter {
+		if line != nil {
+			input += string(line)
+		}
+
+		switch key {
+		case 0: // empty
+		case readline.CharEnter:
 			return nil, 0, false
-		}
-
-		if firstListen {
-			firstListen = false
-			return nil, 0, false
-		}
-
-		if !caughtup && out != "" {
-			if string(line) == out {
-				caughtup = true
+		case readline.CharBackspace:
+			if eraseDefault {
+				eraseDefault = false
+				input = ""
 			}
-			if wroteErr {
-				return nil, 0, false
+			if len(input) > 0 {
+				input = input[:len(input)-1]
+			}
+		default:
+			if eraseDefault {
+				eraseDefault = false
+				input = string(line)
 			}
 		}
 
-		err := validFn(string(line))
-		var prompt string
+		err := validFn(input)
+		var prompt []byte
 
 		if err != nil {
 			prompt = render(p.Templates.invalid, p.Label)
@@ -161,18 +160,32 @@ func (p *Prompt) Run() (string, error) {
 			}
 		}
 
-		rl.SetPrompt(prompt)
-		rl.Refresh()
-		wroteErr = false
+		echo := input
+		if p.Mask != 0 {
+			echo = strings.Repeat(string(p.Mask), len(echo))
+		}
 
-		return nil, 0, false
+		prompt = append(prompt, []byte(echo+cursor)...)
+
+		sb.Reset()
+		sb.Write(prompt)
+
+		if inputErr != nil {
+			validation := render(p.Templates.validation, inputErr)
+			sb.Write(validation)
+			inputErr = nil
+		}
+
+		sb.Flush()
+
+		return nil, 0, true
 	})
 
 	for {
-		out, err = rl.Readline()
+		_, err = rl.Readline()
 
-		oerr := validFn(out)
-		if oerr == nil {
+		inputErr = validFn(input)
+		if inputErr == nil {
 			break
 		}
 
@@ -183,52 +196,42 @@ func (p *Prompt) Run() (string, error) {
 			case io.EOF:
 				err = ErrEOF
 			}
-
 			break
 		}
-
-		caughtup = false
-
-		c.Stdin = io.MultiReader(bytes.NewBuffer([]byte(out)), os.Stdin)
-		rl, _ = readline.NewEx(c)
-
-		firstListen = true
-		wroteErr = true
-
-		validation := render(p.Templates.validation, oerr)
-		prompt := render(p.Templates.invalid, p.Label)
-
-		rl.SetPrompt("\n" + validation + upLine(1) + "\r" + prompt)
-		rl.Refresh()
-	}
-
-	if wroteErr {
-		rl.Write([]byte(downLine(1) + clearLine + upLine(1) + "\r"))
 	}
 
 	if err != nil {
 		if err.Error() == "Interrupt" {
 			err = ErrInterrupt
 		}
-		rl.Write([]byte("\n"))
+		sb.Reset()
+		sb.WriteString("")
+		sb.Flush()
+		rl.Write([]byte(showCursor))
+		rl.Close()
 		return "", err
 	}
 
-	echo := out
+	echo := input
 	if p.Mask != 0 {
 		echo = strings.Repeat(string(p.Mask), len(echo))
 	}
 
-	prompt = render(p.Templates.valid, p.Label)
+	prompt := render(p.Templates.valid, p.Label)
+	prompt = append(prompt, []byte(echo)...)
 
 	if p.IsConfirm && strings.ToLower(echo) != "y" {
 		prompt = render(p.Templates.invalid, p.Label)
 		err = ErrAbort
 	}
 
-	rl.Write([]byte(prompt + render(p.Templates.success, echo) + "\n"))
+	sb.Reset()
+	sb.Write(prompt)
+	sb.Flush()
+	rl.Write([]byte(showCursor))
+	rl.Close()
 
-	return out, err
+	return input, err
 }
 
 func (p *Prompt) prepareTemplates() error {
@@ -242,7 +245,6 @@ func (p *Prompt) prepareTemplates() error {
 	}
 
 	bold := Styler(FGBold)
-	//faint := Styler(FGFaint)
 
 	if p.IsConfirm {
 		p.Default = ""
@@ -320,13 +322,4 @@ func (p *Prompt) prepareTemplates() error {
 	p.Templates = tpls
 
 	return nil
-}
-
-func render(tpl *template.Template, data interface{}) string {
-	var buf bytes.Buffer
-	err := tpl.Execute(&buf, data)
-	if err != nil {
-		return fmt.Sprintf("%v", data)
-	}
-	return buf.String()
 }
