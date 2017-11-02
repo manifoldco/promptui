@@ -121,8 +121,6 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	rl.Write([]byte(hideCursor))
 	sb := screenbuf.New(rl)
 
-	rl.Operation.ExitVimInsertMode() // Never use insert mode for selects
-
 	var searchInput []rune
 	canSearch := s.Searcher != nil
 	searchMode := false
@@ -131,9 +129,9 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		switch key {
 		case readline.CharEnter:
 			return nil, 0, true
-		case readline.CharNext, 'j':
+		case readline.CharNext:
 			s.list.Next()
-		case readline.CharPrev, 'k':
+		case readline.CharPrev:
 			s.list.Prev()
 		case '/':
 			if !canSearch {
@@ -214,11 +212,16 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			sb.Write(output)
 		}
 
-		active := items[idx]
+		if idx == list.NotFound {
+			sb.WriteString("")
+			sb.WriteString("No results")
+		} else {
+			active := items[idx]
 
-		details := s.detailsOutput(active)
-		for _, d := range details {
-			sb.Write(d)
+			details := s.detailsOutput(active)
+			for _, d := range details {
+				sb.Write(d)
+			}
 		}
 
 		sb.Flush()
@@ -226,19 +229,35 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		return nil, 0, true
 	})
 
-	_, err = rl.Readline()
+	for {
+		_, err = rl.Readline()
 
-	if err != nil {
-		switch {
-		case err == readline.ErrInterrupt, err.Error() == "Interrupt":
-			err = ErrInterrupt
-		case err == io.EOF:
-			err = ErrEOF
+		if err != nil {
+			switch {
+			case err == readline.ErrInterrupt, err.Error() == "Interrupt":
+				err = ErrInterrupt
+			case err == io.EOF:
+				err = ErrEOF
+			}
+			break
 		}
 
-		rl.Write([]byte("\n"))
+		_, idx := s.list.Items()
+		if idx != list.NotFound {
+			break
+		}
+
+	}
+
+	if err != nil {
+		if err.Error() == "Interrupt" {
+			err = ErrInterrupt
+		}
+		sb.Reset()
+		sb.WriteString("")
+		sb.Flush()
 		rl.Write([]byte(showCursor))
-		rl.Refresh()
+		rl.Close()
 		return 0, "", err
 	}
 
@@ -250,6 +269,9 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	sb.Reset()
 	sb.Write(output)
 	sb.Flush()
+	rl.Write([]byte(showCursor))
+	rl.Close()
+
 	return s.list.Index(), fmt.Sprintf("%v", item), err
 }
 

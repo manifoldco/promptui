@@ -6,7 +6,12 @@ import (
 	"strings"
 )
 
+// Searcher can be implemented to allow the list to search for results.
 type Searcher func(input string, index int) bool
+
+// NotFound is an index returned when no item was selected. This could
+// happen due to a search without results.
+const NotFound = -1
 
 // List holds a collection of items that can be displayed with an N number of
 // visible items. The list can be moved up, down by one item of time or an
@@ -54,6 +59,8 @@ func (l *List) Prev() {
 	}
 }
 
+// Search allows the list to be filtered by a given term. The list must
+// implement the searcher method for that.
 func (l *List) Search(term string) {
 	term = strings.Trim(term, " ")
 	l.cursor = 0
@@ -61,6 +68,8 @@ func (l *List) Search(term string) {
 	l.search(term)
 }
 
+// CancelSearch stops the current search and returns the list to its
+// original order.
 func (l *List) CancelSearch() {
 	l.cursor = 0
 	l.start = 0
@@ -151,7 +160,15 @@ func (l *List) CanPageUp() bool {
 
 // Index returns the index of the item currently selected.
 func (l *List) Index() int {
-	return l.cursor
+	selected := l.scope[l.cursor]
+
+	for i, item := range l.items {
+		if item == selected {
+			return i
+		}
+	}
+
+	return NotFound
 }
 
 // Items returns a slice equal to the size of the list with the current visible
@@ -165,7 +182,7 @@ func (l *List) Items() ([]interface{}, int) {
 		end = max
 	}
 
-	active := 0
+	active := NotFound
 
 	for i, j := l.start, 0; i < end; i, j = i+1, j+1 {
 		if l.cursor == i {
