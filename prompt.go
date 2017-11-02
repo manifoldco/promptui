@@ -204,7 +204,11 @@ func (p *Prompt) Run() (string, error) {
 		if err.Error() == "Interrupt" {
 			err = ErrInterrupt
 		}
-		rl.Write([]byte("\n"))
+		sb.Reset()
+		sb.WriteString("")
+		sb.Flush()
+		rl.Write([]byte(showCursor))
+		rl.Close()
 		return "", err
 	}
 
