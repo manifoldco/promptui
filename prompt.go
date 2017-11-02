@@ -10,7 +10,7 @@ import (
 	"github.com/manifoldco/promptui/screenbuf"
 )
 
-var cursor = Styler(FGBlink)("\u2588")
+const cursor = "\u258f"
 
 // Prompt represents a single line text field input.
 type Prompt struct {
