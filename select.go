@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"reflect"
 	"text/template"
 
 	"github.com/chzyer/readline"
@@ -120,7 +119,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	}
 
 	rl.Write([]byte(hideCursor))
-	sb := screenbuf.New()
+	sb := screenbuf.New(rl)
 
 	rl.Operation.ExitVimInsertMode() // Never use insert mode for selects
 
@@ -129,24 +128,12 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	searchMode := false
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
-		if rl.Operation.IsEnableVimMode() {
-			rl.Operation.ExitVimInsertMode()
-			// Remap j and k for down/up selections immediately after an
-			// `i` press
-			switch key {
-			case 'j':
-				key = readline.CharNext
-			case 'k':
-				key = readline.CharPrev
-			}
-		}
-
 		switch key {
 		case readline.CharEnter:
 			return nil, 0, true
-		case readline.CharNext:
+		case readline.CharNext, 'j':
 			s.list.Next()
-		case readline.CharPrev:
+		case readline.CharPrev, 'k':
 			s.list.Prev()
 		case '/':
 			if !canSearch {
@@ -194,21 +181,13 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			sb.WriteString(header)
 		}
 
-		label := renderBytes(s.Templates.label, s.Label)
+		label := render(s.Templates.label, s.Label)
 		sb.Write(label)
 
-		active, ok := s.list.Selected()
+		items, idx := s.list.Items()
+		last := len(items) - 1
 
-		if !ok {
-			sb.WriteString("no results found")
-			sb.WriteTo(rl)
-			return nil, 0, true
-		}
-
-		display := s.list.Display()
-		last := len(display) - 1
-
-		for i, item := range display {
+		for i, item := range items {
 			page := " "
 
 			switch i {
@@ -226,21 +205,23 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 			output := []byte(page + " ")
 
-			if item == active {
-				output = append(output, renderBytes(s.Templates.active, item)...)
+			if i == idx {
+				output = append(output, render(s.Templates.active, item)...)
 			} else {
-				output = append(output, renderBytes(s.Templates.inactive, item)...)
+				output = append(output, render(s.Templates.inactive, item)...)
 			}
 
 			sb.Write(output)
 		}
+
+		active := items[idx]
 
 		details := s.detailsOutput(active)
 		for _, d := range details {
 			sb.Write(d)
 		}
 
-		sb.WriteTo(rl)
+		sb.Flush()
 
 		return nil, 0, true
 	})
@@ -261,30 +242,18 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		return 0, "", err
 	}
 
-	for {
-		item, ok := s.list.Selected()
-		if ok {
-			output := renderBytes(s.Templates.selected, item)
+	items, idx := s.list.Items()
+	item := items[idx]
 
-			sb.Reset()
-			sb.Write(output)
-			sb.WriteTo(rl)
+	output := render(s.Templates.selected, item)
 
-			rl.Write([]byte(showCursor))
-			rl.Close()
-
-			return s.list.Index(), fmt.Sprintf("%v", item), err
-		} else {
-
-		}
-	}
+	sb.Reset()
+	sb.Write(output)
+	sb.Flush()
+	return s.list.Index(), fmt.Sprintf("%v", item), err
 }
 
 func (s *Select) prepareTemplates() error {
-	if s.Items == nil || reflect.TypeOf(s.Items).Kind() != reflect.Slice {
-		return fmt.Errorf("Items %v is not a slice", s.Items)
-	}
-
 	tpls := s.Templates
 	if tpls == nil {
 		tpls = &SelectTemplates{}
@@ -428,7 +397,7 @@ func (s *Select) detailsOutput(item interface{}) [][]byte {
 	return bytes.Split(output, []byte("\n"))
 }
 
-func renderBytes(tpl *template.Template, data interface{}) []byte {
+func render(tpl *template.Template, data interface{}) []byte {
 	var buf bytes.Buffer
 	err := tpl.Execute(&buf, data)
 	if err != nil {

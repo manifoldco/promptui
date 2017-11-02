@@ -16,13 +16,3 @@ var ErrAbort = errors.New("")
 // ValidateFunc validates the given input. It should return a ValidationError
 // if the input is not valid.
 type ValidateFunc func(string) error
-
-// SuccessfulValue returns a value as if it were entered via prompt, valid
-func SuccessfulValue(label, value string) string {
-	return IconGood + " " + label + ": " + faint(value)
-}
-
-// FailedValue returns a value as if it were entered via prompt, invalid
-func FailedValue(label, value string) string {
-	return IconBad + " " + label + ": " + faint(value)
-}

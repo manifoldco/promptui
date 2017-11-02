@@ -120,9 +120,12 @@ func (l *List) PageDown() {
 	start := l.start + l.size
 	max := len(l.scope) - l.size
 
-	if start > max {
+	switch {
+	case len(l.scope) < l.size:
+		l.start = 0
+	case start > max:
 		l.start = max
-	} else {
+	default:
 		l.start = start
 	}
 
@@ -130,7 +133,6 @@ func (l *List) PageDown() {
 
 	if cursor == l.cursor {
 		l.cursor = len(l.scope) - 1
-
 	} else if cursor > l.cursor {
 		l.cursor = cursor
 	}
@@ -152,17 +154,9 @@ func (l *List) Index() int {
 	return l.cursor
 }
 
-// Selected returns the item currently selected.
-func (l *List) Selected() (interface{}, bool) {
-	if len(l.scope) > l.cursor {
-		return l.scope[l.cursor], true
-	}
-	return nil, false
-}
-
-// Display returns a slice equal to the size of the list with the current
-// visible items.
-func (l *List) Display() []interface{} {
+// Items returns a slice equal to the size of the list with the current visible
+// items and the index of the active item in this list.
+func (l *List) Items() ([]interface{}, int) {
 	var result []interface{}
 	max := len(l.scope)
 	end := l.start + l.size
@@ -171,9 +165,15 @@ func (l *List) Display() []interface{} {
 		end = max
 	}
 
-	for i := l.start; i < end; i++ {
+	active := 0
+
+	for i, j := l.start, 0; i < end; i, j = i+1, j+1 {
+		if l.cursor == i {
+			active = j
+		}
+
 		result = append(result, l.scope[i])
 	}
 
-	return result
+	return result, active
 }
