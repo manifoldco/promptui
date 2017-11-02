@@ -126,14 +126,14 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	searchMode := false
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
-		switch key {
-		case readline.CharEnter:
+		switch {
+		case key == readline.CharEnter:
 			return nil, 0, true
-		case readline.CharNext:
+		case key == readline.CharNext || (key == 'j' && !searchMode):
 			s.list.Next()
-		case readline.CharPrev:
+		case key == readline.CharPrev || (key == 'k' && !searchMode):
 			s.list.Prev()
-		case '/':
+		case key == '/':
 			if !canSearch {
 				break
 			}
@@ -145,7 +145,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			} else {
 				searchMode = true
 			}
-		case readline.CharBackspace:
+		case key == readline.CharBackspace:
 			if !canSearch || !searchMode {
 				break
 			}
@@ -157,9 +157,9 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 				searchInput = nil
 				s.list.CancelSearch()
 			}
-		case readline.CharBackward:
+		case key == readline.CharBackward || (key == 'h' && !searchMode):
 			s.list.PageUp()
-		case readline.CharForward:
+		case key == readline.CharForward || (key == 'l' && !searchMode):
 			s.list.PageDown()
 		default:
 			if canSearch && searchMode {
@@ -169,7 +169,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		}
 
 		if searchMode {
-			header := fmt.Sprintf("Search: %s", string(searchInput))
+			header := fmt.Sprintf("Search: %s%s", string(searchInput), cursor)
 			sb.WriteString(header)
 		} else {
 			header := "Use the arrow keys to navigate: ↑↓←→"
