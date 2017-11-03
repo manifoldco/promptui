@@ -29,9 +29,9 @@ func main() {
 
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}?",
-		Active:   "\U0001F336 {{ .Name | bold }} ({{ .HeatUnit | red }})",
-		Inactive: "  {{ .Name | bold }} ({{ .HeatUnit | red }})",
-		Selected: "\U0001F336 {{ .Name | red | bold }}",
+		Active:   "\U0001F336 {{ .Name | cyan }} ({{ .HeatUnit | red }})",
+		Inactive: "  {{ .Name | cyan }} ({{ .HeatUnit | red }})",
+		Selected: "\U0001F336 {{ .Name | red | cyan }}",
 		Details: `
 --------- Pepper ----------
 {{ "Name:" | faint }}	{{ .Name }}
@@ -62,5 +62,5 @@ func main() {
 		return
 	}
 
-	fmt.Printf("You choose number %d: %v\n", i+1, peppers[i])
+	fmt.Printf("You choose number %d: %+v\n", i+1, peppers[i])
 }
