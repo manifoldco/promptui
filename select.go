@@ -37,9 +37,31 @@ type Select struct {
 	// default templates are used.
 	Templates *SelectTemplates
 
+	// Keys can be used to change movement and search keys.
+	Keys *SelectKeys
+
+	// Searcher can be implemented to teach the select how to search for items.
+	Searcher list.Searcher
+
 	label string
 
 	list *list.List
+}
+
+// SelectKeys defines which keys can be used for movement and search.
+type SelectKeys struct {
+	Next     Key // Next defaults to down arrow key
+	Prev     Key // Prev defaults to up arrow key
+	PageUp   Key // PageUp defaults to left arrow key
+	PageDown Key // PageDown defaults to right arrow key
+	Search   Key // Search defaults to '/' key
+}
+
+// Key defines a keyboard code and a display representation for the help
+// Check https://github.com/chzyer/readline for a list of codes
+type Key struct {
+	Code    rune
+	Display string
 }
 
 // SelectTemplates allow a select prompt to be customized following stdlib
@@ -61,6 +83,10 @@ type SelectTemplates struct {
 	// additional information. It can have multiple lines.
 	Details string
 
+	// Help is a text/template for displaying instructions at the top. By default
+	// it shows keys for movement and search.
+	Help string
+
 	// FuncMap is a map of helpers for the templates. If nil, the default helpers
 	// are used.
 	FuncMap template.FuncMap
@@ -70,6 +96,7 @@ type SelectTemplates struct {
 	inactive *template.Template
 	selected *template.Template
 	details  *template.Template
+	help     *template.Template
 }
 
 // Run runs the Select list. It returns the index of the selected element,
@@ -83,7 +110,11 @@ func (s *Select) Run() (int, string, error) {
 	if err != nil {
 		return 0, "", err
 	}
+	l.Searcher = s.Searcher
+
 	s.list = l
+
+	s.setKeys()
 
 	err = s.prepareTemplates()
 	if err != nil {
@@ -117,20 +148,59 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	rl.Write([]byte(hideCursor))
 	sb := screenbuf.New(rl)
 
-	rl.Operation.ExitVimInsertMode() // Never use insert mode for selects
+	var searchInput []rune
+	canSearch := s.Searcher != nil
+	searchMode := false
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
-		switch key {
-		case readline.CharEnter:
+		switch {
+		case key == readline.CharEnter:
 			return nil, 0, true
-		case readline.CharNext, 'j':
+		case key == s.Keys.Next.Code || (key == 'j' && !searchMode):
 			s.list.Next()
-		case readline.CharPrev, 'k':
+		case key == s.Keys.Prev.Code || (key == 'k' && !searchMode):
 			s.list.Prev()
-		case ' ': // space press
-			s.list.PageDown()
-		case 'b':
+		case key == s.Keys.Search.Code:
+			if !canSearch {
+				break
+			}
+
+			if searchMode {
+				searchMode = false
+				searchInput = nil
+				s.list.CancelSearch()
+			} else {
+				searchMode = true
+			}
+		case key == readline.CharBackspace:
+			if !canSearch || !searchMode {
+				break
+			}
+
+			if len(searchInput) > 1 {
+				searchInput = searchInput[:len(searchInput)-1]
+				s.list.Search(string(searchInput))
+			} else {
+				searchInput = nil
+				s.list.CancelSearch()
+			}
+		case key == s.Keys.PageUp.Code || (key == 'h' && !searchMode):
 			s.list.PageUp()
+		case key == s.Keys.PageDown.Code || (key == 'l' && !searchMode):
+			s.list.PageDown()
+		default:
+			if canSearch && searchMode {
+				searchInput = append(searchInput, line...)
+				s.list.Search(string(searchInput))
+			}
+		}
+
+		if searchMode {
+			header := fmt.Sprintf("Search: %s%s", string(searchInput), cursor)
+			sb.WriteString(header)
+		} else {
+			help := s.renderHelp(canSearch)
+			sb.Write(help)
 		}
 
 		label := render(s.Templates.label, s.Label)
@@ -166,11 +236,16 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			sb.Write(output)
 		}
 
-		active := items[idx]
+		if idx == list.NotFound {
+			sb.WriteString("")
+			sb.WriteString("No results")
+		} else {
+			active := items[idx]
 
-		details := s.detailsOutput(active)
-		for _, d := range details {
-			sb.Write(d)
+			details := s.renderDetails(active)
+			for _, d := range details {
+				sb.Write(d)
+			}
 		}
 
 		sb.Flush()
@@ -178,19 +253,35 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		return nil, 0, true
 	})
 
-	_, err = rl.Readline()
+	for {
+		_, err = rl.Readline()
 
-	if err != nil {
-		switch {
-		case err == readline.ErrInterrupt, err.Error() == "Interrupt":
-			err = ErrInterrupt
-		case err == io.EOF:
-			err = ErrEOF
+		if err != nil {
+			switch {
+			case err == readline.ErrInterrupt, err.Error() == "Interrupt":
+				err = ErrInterrupt
+			case err == io.EOF:
+				err = ErrEOF
+			}
+			break
 		}
 
-		rl.Write([]byte("\n"))
+		_, idx := s.list.Items()
+		if idx != list.NotFound {
+			break
+		}
+
+	}
+
+	if err != nil {
+		if err.Error() == "Interrupt" {
+			err = ErrInterrupt
+		}
+		sb.Reset()
+		sb.WriteString("")
+		sb.Flush()
 		rl.Write([]byte(showCursor))
-		rl.Refresh()
+		rl.Close()
 		return 0, "", err
 	}
 
@@ -202,7 +293,6 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	sb.Reset()
 	sb.Write(output)
 	sb.Flush()
-
 	rl.Write([]byte(showCursor))
 	rl.Close()
 
@@ -271,6 +361,19 @@ func (s *Select) prepareTemplates() error {
 		tpls.details = tpl
 	}
 
+	if tpls.Help == "" {
+		tpls.Help = fmt.Sprintf(`{{ "Use the arrow keys to navigate:" | faint }} {{ .NextKey | faint }} ` +
+			`{{ .PrevKey | faint }} {{ .PageDownKey | faint }} {{ .PageUpKey | faint }} ` +
+			`{{ if .Search }} {{ "and" | faint }} {{ .SearchKey | faint }} {{ "toggles search" | faint }}{{ end }}`)
+	}
+
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Help)
+	if err != nil {
+		return err
+	}
+
+	tpls.help = tpl
+
 	s.Templates = tpls
 
 	return nil
@@ -333,7 +436,20 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	return SelectedAdd, value, err
 }
 
-func (s *Select) detailsOutput(item interface{}) [][]byte {
+func (s *Select) setKeys() {
+	if s.Keys != nil {
+		return
+	}
+	s.Keys = &SelectKeys{
+		Prev:     Key{Code: readline.CharPrev, Display: "↑"},
+		Next:     Key{Code: readline.CharNext, Display: "↓"},
+		PageUp:   Key{Code: readline.CharBackward, Display: "←"},
+		PageDown: Key{Code: readline.CharForward, Display: "→"},
+		Search:   Key{Code: '/', Display: "/"},
+	}
+}
+
+func (s *Select) renderDetails(item interface{}) [][]byte {
 	if s.Templates.details == nil {
 		return nil
 	}
@@ -351,6 +467,26 @@ func (s *Select) detailsOutput(item interface{}) [][]byte {
 	output := buf.Bytes()
 
 	return bytes.Split(output, []byte("\n"))
+}
+
+func (s *Select) renderHelp(b bool) []byte {
+	keys := struct {
+		NextKey     string
+		PrevKey     string
+		PageDownKey string
+		PageUpKey   string
+		Search      bool
+		SearchKey   string
+	}{
+		NextKey:     s.Keys.Next.Display,
+		PrevKey:     s.Keys.Prev.Display,
+		PageDownKey: s.Keys.PageDown.Display,
+		PageUpKey:   s.Keys.PageUp.Display,
+		SearchKey:   s.Keys.Search.Display,
+		Search:      b,
+	}
+
+	return render(s.Templates.help, keys)
 }
 
 func render(tpl *template.Template, data interface{}) []byte {

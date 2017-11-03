@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 )
@@ -28,9 +29,9 @@ func main() {
 
 	templates := &promptui.SelectTemplates{
 		Label:    "{{ . }}?",
-		Active:   "\U0001F336 {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
-		Inactive: "  {{ .Name | bold }} ({{ .HeatUnit | red | italic }})",
-		Selected: "\U0001F336 {{ .Name | red | bold }}",
+		Active:   "\U0001F336 {{ .Name | cyan }} ({{ .HeatUnit | red }})",
+		Inactive: "  {{ .Name | cyan }} ({{ .HeatUnit | red }})",
+		Selected: "\U0001F336 {{ .Name | red | cyan }}",
 		Details: `
 --------- Pepper ----------
 {{ "Name:" | faint }}	{{ .Name }}
@@ -38,11 +39,20 @@ func main() {
 {{ "Peppers:" | faint }}	{{ .Peppers }}`,
 	}
 
+	searcher := func(input string, index int) bool {
+		pepper := peppers[index]
+		name := strings.Replace(strings.ToLower(pepper.Name), " ", "", -1)
+		input = strings.Replace(strings.ToLower(input), " ", "", -1)
+
+		return strings.Contains(name, input)
+	}
+
 	prompt := promptui.Select{
 		Label:     "Spicy Level",
 		Items:     peppers,
 		Templates: templates,
 		Size:      4,
+		Searcher:  searcher,
 	}
 
 	i, _, err := prompt.Run()
@@ -52,5 +62,5 @@ func main() {
 		return
 	}
 
-	fmt.Printf("You choose number %d: %v\n", i+1, peppers[i])
+	fmt.Printf("You choose number %d: %+v\n", i+1, peppers[i])
 }
