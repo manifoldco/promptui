@@ -109,6 +109,52 @@ func TestListPageDown(t *testing.T) {
 	})
 }
 
+func TestListComparion(t *testing.T) {
+	t.Run("when item supports comparison", func(t *testing.T) {
+		type comparable struct {
+			Number int
+		}
+
+		structs := []comparable{
+			{Number: 1},
+			{Number: 2},
+		}
+
+		l, err := New(structs, 4)
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+
+		idx := l.Index()
+
+		if idx != 0 {
+			t.Errorf("expected index to be first, got %d", idx)
+		}
+	})
+
+	t.Run("when item doesn't support comparison", func(t *testing.T) {
+		type uncomparable struct {
+			Numbers []int
+		}
+
+		structs := []uncomparable{
+			{Numbers: []int{1}},
+			{Numbers: []int{2}},
+		}
+
+		l, err := New(structs, 4)
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+
+		idx := l.Index()
+
+		if idx != 0 {
+			t.Errorf("expected index to be first, got %d", idx)
+		}
+	})
+}
+
 func castList(list []interface{}) []rune {
 	result := make([]rune, len(list))
 	for i, l := range list {

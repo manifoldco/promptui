@@ -17,8 +17,8 @@ const NotFound = -1
 // visible items. The list can be moved up, down by one item of time or an
 // entire page (ie: visible size). It keeps track of the current selected item.
 type List struct {
-	items    []interface{}
-	scope    []interface{}
+	items    []*interface{}
+	scope    []*interface{}
 	cursor   int // cursor holds the index of the current selected item
 	size     int // size is the number of visible options
 	start    int
@@ -37,10 +37,11 @@ func New(items interface{}, size int) (*List, error) {
 	}
 
 	slice := reflect.ValueOf(items)
-	values := make([]interface{}, slice.Len())
+	values := make([]*interface{}, slice.Len())
 
 	for i := range values {
-		values[i] = slice.Index(i).Interface()
+		item := slice.Index(i).Interface()
+		values[i] = &item
 	}
 
 	return &List{size: size, items: values, scope: values}, nil
@@ -77,7 +78,7 @@ func (l *List) CancelSearch() {
 }
 
 func (l *List) search(term string) {
-	var scope []interface{}
+	var scope []*interface{}
 
 	for i, item := range l.items {
 		if l.Searcher(term, i) {
@@ -189,7 +190,7 @@ func (l *List) Items() ([]interface{}, int) {
 			active = j
 		}
 
-		result = append(result, l.scope[i])
+		result = append(result, *l.scope[i])
 	}
 
 	return result, active
