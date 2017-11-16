@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
-## [0.1.0] - 2017-11-16
+## [0.2.0] - 2017-11-16
+
+### Added
+
+- `Select` items can now be searched
+
+## [0.1.0] - 2017-11-02
 
 ### Added
 
