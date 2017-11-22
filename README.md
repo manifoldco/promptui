@@ -13,7 +13,7 @@ Interactive prompt for command-line applications.
 
 ## Overview
 
-[![asciicast](https://asciinema.org/a/148948.png)](https://asciinema.org/a/148948)
+![custom_select](/_examples/imgs/custom_select.gif)
 
 Promptui is a library providing a simple interface to create command-line
 prompts for go. It can be easily integrated into
