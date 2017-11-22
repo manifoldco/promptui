@@ -22,10 +22,10 @@ prompts for go. It can be easily integrated into
 
 Promptui has two main input modes:
 
-- `.Prompt` provides a single line for user input. Prompt supports
+- `Prompt` provides a single line for user input. Prompt supports
   optional live validation, confirmation and masking the input.
 
-- `.Select` provides a list of options to choose from. Select supports
+- `Select` provides a list of options to choose from. Select supports
   pagination, search, detailed view and custom templates.
 
 For a full list of options check [GoDoc](https://godoc.org/github.com/manifoldco/promptui).
@@ -71,7 +71,7 @@ func main() {
 ```
 [Preview](https://asciinema.org/a/148944)
 
-### Selection
+### Select
 
 ```go
 package main
@@ -103,4 +103,4 @@ func main() {
 
 ### More Examples
 
-See full list of examples at [examples](https://github.com/manifoldco/promptui/tree/master/_examples)
+See full list of [examples](https://github.com/manifoldco/promptui/tree/master/_examples)
