@@ -34,8 +34,6 @@ For a full list of options check [GoDoc](https://godoc.org/github.com/manifoldco
 
 ### Prompt
 
-[![asciicast](https://asciinema.org/a/148944.png)](https://asciinema.org/a/148944)
-
 ```go
 package main
 
@@ -71,10 +69,9 @@ func main() {
 	fmt.Printf("You choose %q\n", result)
 }
 ```
+[Preview](https://asciinema.org/a/148944)
 
 ### Selection
-
-[![asciicast](https://asciinema.org/a/148946.png)](https://asciinema.org/a/148946)
 
 ```go
 package main
@@ -102,6 +99,7 @@ func main() {
 	fmt.Printf("You choose %q\n", result)
 }
 ```
+[Preview](https://asciinema.org/a/148946)
 
 ### More Examples
 
