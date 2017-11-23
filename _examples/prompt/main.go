@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -10,7 +11,10 @@ import (
 func main() {
 	validate := func(input string) error {
 		_, err := strconv.ParseFloat(input, 64)
-		return err
+		if err != nil {
+			return errors.New("Invalid number")
+		}
+		return nil
 	}
 
 	prompt := promptui.Prompt{

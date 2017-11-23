@@ -7,11 +7,10 @@ import (
 )
 
 func main() {
-	values := []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
-
 	prompt := promptui.Select{
-		Label: "Select Number",
-		Items: values,
+		Label: "Select Day",
+		Items: []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+			"Saturday", "Sunday"},
 	}
 
 	_, result, err := prompt.Run()
@@ -21,5 +20,5 @@ func main() {
 		return
 	}
 
-	fmt.Printf("You choose %s\n", result)
+	fmt.Printf("You choose %q\n", result)
 }
