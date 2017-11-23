@@ -13,7 +13,7 @@ Interactive prompt for command-line applications.
 
 ## Overview
 
-![custom_select](/_examples/imgs/custom_select.gif)
+![promptui](https://media.giphy.com/media/xUNda0Ngb5qsogLsBi/giphy.gif)
 
 Promptui is a library providing a simple interface to create command-line
 prompts for go. It can be easily integrated into
@@ -69,7 +69,6 @@ func main() {
 	fmt.Printf("You choose %q\n", result)
 }
 ```
-[Preview](https://asciinema.org/a/148944)
 
 ### Select
 
@@ -99,7 +98,6 @@ func main() {
 	fmt.Printf("You choose %q\n", result)
 }
 ```
-[Preview](https://asciinema.org/a/148946)
 
 ### More Examples
 
