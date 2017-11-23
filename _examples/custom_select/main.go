@@ -62,5 +62,5 @@ func main() {
 		return
 	}
 
-	fmt.Printf("You choose number %d: %+v\n", i+1, peppers[i])
+	fmt.Printf("You choose number %d: %s\n", i+1, peppers[i].Name)
 }
