@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.2.1] - 2017-11-30
+
+### Fixed
+
+- `SelectWithAdd` panicking on `.Run` due to lack of keys setup
+
 ## [0.2.0] - 2017-11-16
 
 ### Added
