@@ -412,6 +412,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			Size:      5,
 			list:      list,
 		}
+		s.setKeys()
 
 		err = s.prepareTemplates()
 		if err != nil {
