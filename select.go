@@ -419,6 +419,8 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			return 0, "", err
 		}
 
+		s.setKeys() 
+
 		selected, value, err := s.innerRun(1, '+')
 		if err != nil || selected != 0 {
 			return selected - 1, value, err
