@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+
+- Background colors codes and template helpers
+
 ## [0.2.1] - 2017-11-30
 
 ### Fixed
