@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
 - `SelectWithAdd` panicking on `.Run` due to lack of keys setup
+- Backspace key on Windows
 
 ## [0.2.0] - 2017-11-16
 
