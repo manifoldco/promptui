@@ -131,9 +131,9 @@ func (p *Prompt) Run() (string, error) {
 
 		switch key {
 		case 0: // empty
-		case readline.CharEnter:
+		case KeyEnter:
 			return nil, 0, false
-		case readline.CharBackspace:
+		case KeyBackspace:
 			if eraseDefault {
 				eraseDefault = false
 				input = ""

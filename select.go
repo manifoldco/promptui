@@ -154,7 +154,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
 		switch {
-		case key == readline.CharEnter:
+		case key == KeyEnter:
 			return nil, 0, true
 		case key == s.Keys.Next.Code || (key == 'j' && !searchMode):
 			s.list.Next()
@@ -172,7 +172,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			} else {
 				searchMode = true
 			}
-		case key == readline.CharBackspace:
+		case key == KeyBackspace:
 			if !canSearch || !searchMode {
 				break
 			}
@@ -442,10 +442,10 @@ func (s *Select) setKeys() {
 		return
 	}
 	s.Keys = &SelectKeys{
-		Prev:     Key{Code: readline.CharPrev, Display: "↑"},
-		Next:     Key{Code: readline.CharNext, Display: "↓"},
-		PageUp:   Key{Code: readline.CharBackward, Display: "←"},
-		PageDown: Key{Code: readline.CharForward, Display: "→"},
+		Prev:     Key{Code: KeyPrev, Display: "↑"},
+		Next:     Key{Code: KeyNext, Display: "↓"},
+		PageUp:   Key{Code: KeyBackward, Display: "←"},
+		PageDown: Key{Code: KeyForward, Display: "→"},
 		Search:   Key{Code: '/', Display: "/"},
 	}
 }
