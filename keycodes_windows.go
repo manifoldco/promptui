@@ -5,8 +5,10 @@ package promptui
 var (
 	KeyEnter     rune = 13
 	KeyBackspace rune = 8
-	KeyPrev      rune = 38
-	KeyNext      rune = 40
-	KeyBackward  rune = 37
-	KeyForward   rune = 39
+
+	// not working
+	KeyPrev     rune = 38
+	KeyNext     rune = 40
+	KeyBackward rune = 37
+	KeyForward  rune = 39
 )
