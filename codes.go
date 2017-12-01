@@ -33,6 +33,18 @@ const (
 	FGWhite
 )
 
+// Background color attributes
+const (
+	BGBlack attribute = iota + 40
+	BGRed
+	BGGreen
+	BGYellow
+	BGBlue
+	BGMagenta
+	BGCyan
+	BGWhite
+)
+
 // ResetCode is the character code used to reset the terminal formatting
 var ResetCode = fmt.Sprintf("%s%dm", esc, reset)
 
@@ -53,6 +65,14 @@ var FuncMap = template.FuncMap{
 	"magenta":   Styler(FGMagenta),
 	"cyan":      Styler(FGCyan),
 	"white":     Styler(FGWhite),
+	"bgBlack":   Styler(BGBlack),
+	"bgRed":     Styler(BGRed),
+	"bgGreen":   Styler(BGGreen),
+	"bgYellow":  Styler(BGYellow),
+	"bgBlue":    Styler(BGBlue),
+	"bgMagenta": Styler(BGMagenta),
+	"bgCyan":    Styler(BGCyan),
+	"bgWhite":   Styler(BGWhite),
 	"bold":      Styler(FGBold),
 	"faint":     Styler(FGFaint),
 	"italic":    Styler(FGItalic),
