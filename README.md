@@ -68,7 +68,7 @@ func main() {
 		return
 	}
 
-	fmt.Printf("You choose %q\n", result)
+	fmt.Printf("You chose %q\n", result)
 }
 ```
 
