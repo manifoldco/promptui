@@ -35,8 +35,8 @@ type Prompt struct {
 	IsConfirm bool
 	IsVimMode bool
 
-	stdin  io.Reader
-	stdout io.Writer
+	stdin  io.ReadCloser
+	stdout io.WriteCloser
 }
 
 // PromptTemplates allow a prompt to be customized following stdlib
