@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 
 - `<Enter>` key press on Windows
+- `juju/ansiterm` dependency
+- `chzyer/readline#136` new api with ReadCloser
 
 ## [0.2.1] - 2017-11-30
 
