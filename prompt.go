@@ -20,6 +20,10 @@ type Prompt struct {
 
 	Default string // Default is the initial value to populate in the prompt
 
+	// AllowEdit lets the user edit the default value. If false, any key press
+	// other than <Enter> automatically clears the default value.
+	AllowEdit bool
+
 	// Validate is optional. If set, this function is used to validate the input
 	// after each character entry.
 	Validate ValidateFunc
@@ -32,7 +36,10 @@ type Prompt struct {
 	// default templates are used.
 	Templates *PromptTemplates
 
+	// IsConfirm sets the prompt to be a [y/N] question.
 	IsConfirm bool
+
+	// IsVimMode enables vi-like movements (hjkl) and editing.
 	IsVimMode bool
 
 	stdin  io.ReadCloser
@@ -122,7 +129,7 @@ func (p *Prompt) Run() (string, error) {
 
 	var inputErr error
 	input := p.Default
-	eraseDefault := input != ""
+	eraseDefault := input != "" && !p.AllowEdit
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
 		if line != nil {

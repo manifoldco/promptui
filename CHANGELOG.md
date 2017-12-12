@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Background colors codes and template helpers
+- `AllowEdit` for prompt to prevent deletion of the default value by any key
+
+### Fixed
+
+- `<Enter>` key press on Windows
 
 ## [0.2.1] - 2017-11-30
 
