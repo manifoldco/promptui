@@ -12,5 +12,5 @@ required=[
   branch = "master"
 
 [[constraint]]
-  name = "github.com/juju/master"
+  name = "github.com/juju/ansiterm"
   branch = "master"
