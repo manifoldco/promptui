@@ -129,6 +129,9 @@ func (p *Prompt) Run() (string, error) {
 
 	var inputErr error
 	input := p.Default
+	if p.IsConfirm {
+		input = ""
+	}
 	eraseDefault := input != "" && !p.AllowEdit
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
@@ -227,9 +230,12 @@ func (p *Prompt) Run() (string, error) {
 	prompt := render(p.Templates.valid, p.Label)
 	prompt = append(prompt, []byte(echo)...)
 
-	if p.IsConfirm && strings.ToLower(echo) != "y" {
-		prompt = render(p.Templates.invalid, p.Label)
-		err = ErrAbort
+	if p.IsConfirm {
+		lowerDefault := strings.ToLower(p.Default)
+		if strings.ToLower(echo) != "y" && (lowerDefault != "y" || (lowerDefault == "y" && echo != "")) {
+			prompt = render(p.Templates.invalid, p.Label)
+			err = ErrAbort
+		}
 	}
 
 	sb.Reset()
@@ -254,7 +260,6 @@ func (p *Prompt) prepareTemplates() error {
 	bold := Styler(FGBold)
 
 	if p.IsConfirm {
-		p.Default = ""
 		if tpls.Confirm == "" {
 			confirm := "y/N"
 			if strings.ToLower(p.Default) == "y" {
