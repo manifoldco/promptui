@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Background colors codes and template helpers
 - `AllowEdit` for prompt to prevent deletion of the default value by any key
+- Added `StartInSearchMode` to allow starting the prompt in search mode
 
 ### Fixed
 
