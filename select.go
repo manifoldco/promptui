@@ -43,6 +43,9 @@ type Select struct {
 	// Searcher can be implemented to teach the select how to search for items.
 	Searcher list.Searcher
 
+	// Starts the prompt in search mode.
+	StartInSearchMode bool
+
 	label string
 
 	list *list.List
@@ -150,7 +153,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	var searchInput []rune
 	canSearch := s.Searcher != nil
-	searchMode := false
+	searchMode := s.StartInSearchMode
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
 		switch {
