@@ -149,7 +149,8 @@ func (p *Prompt) Run() (string, error) {
 				input = ""
 			}
 			if len(input) > 0 {
-				input = input[:len(input)-1]
+				r := []rune(input)
+				input = string(r[:len(r)-1])
 			}
 		default:
 			if eraseDefault {
