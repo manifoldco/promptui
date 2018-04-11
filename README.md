@@ -56,7 +56,7 @@ func main() {
 		return nil
 	}
 
-	prompt := promptui.Prompt{
+	prompt := &promptui.Prompt{
 		Label:    "Number",
 		Validate: validate,
 	}
@@ -84,7 +84,7 @@ import (
 )
 
 func main() {
-	prompt := promptui.Select{
+	prompt := &promptui.Select{
 		Label: "Select Day",
 		Items: []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
 			"Saturday", "Sunday"},
