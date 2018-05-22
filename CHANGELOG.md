@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.3.0] - 2018-05-22
+
 ### Added
 
 - Background colors codes and template helpers
@@ -18,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `<Enter>` key press on Windows
 - `juju/ansiterm` dependency
 - `chzyer/readline#136` new api with ReadCloser
+- Deleting UTF-8 characters sequence
 
 ## [0.2.1] - 2017-11-30
 
