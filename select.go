@@ -13,37 +13,81 @@ import (
 	"github.com/manifoldco/promptui/screenbuf"
 )
 
-// SelectedAdd is returned from SelectWithAdd when add is selected.
+// SelectedAdd is used internally inside SelectWithAdd when the add option is selected in select mode.
+// Since -1 is not a possible selected index, this ensure that add mode is always unique inside
+// SelectWithAdd's logic.
 const SelectedAdd = -1
 
-// Select represents a list for selecting a single item
+// Select represents a list of items used to enable selections, they can be used as search engines, menus
+// or even to add new entries inside a list of records thanks ot its add mode.
+//
+// Basic Usage
+// 		package main
+//
+//		import (
+//			"fmt"
+//
+//			"github.com/manifoldco/promptui"
+//		)
+//
+//		func main() {
+//			prompt := promptui.Select{
+//			Label: "Select Day",
+//			Items: []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+//				"Saturday", "Sunday"},
+//		}
+//
+//		_, result, err := prompt.Run()
+//
+//		if err != nil {
+//			fmt.Printf("Prompt failed %v\n", err)
+//			return
+//		}
+//
+//		fmt.Printf("You choose %q\n", result)
+//	}
 type Select struct {
-	// Label is the value displayed on the command line prompt. It can be any
-	// value one would pass to a text/template Execute(), including just a string.
+	// Label is the text displayed on top of the list to direct input. The IconInitial value "?" will be
+	// appended automatically to the label so it does not need to be added.
+	//
+	// The value for Label can be a simple string or a struct that will need to be accessed by dot notation
+	// inside the templates. For example, `{{ .Name }}` will display the name property of a struct.
 	Label interface{}
 
-	// Items are the items to use in the list. It can be any slice type one would
-	// pass to a text/template execute, including a string slice.
+	// Items are the items to display inside the list. It expect a slice of any kind of values, including strings.
+	//
+	// If using a slice a strings, prompt-ui will use those strings directly into its base templates or the
+	// provided templates. If using any other type in the slice, it will attempt to transform it into a string
+	// before giving it to its templates. Custom templates will override this behavior if using the dot notation
+	// inside the templates.
+	//
+	// For example, `{{ .Name }}` will display the name property of a struct.
 	Items interface{}
 
-	// Size is the number of items that should appear on the select before
-	// scrolling. If it is 0, defaults to 5.
+	// Size is the number of items that should appear on the select before scrolling is necessary. Defaults to 5.
 	Size int
 
-	// IsVimMode sets whether readline is using Vim mode.
+	// IsVimMode sets whether to use vim mode when using readline in the command prompt. Look at
+	// https://godoc.org/github.com/chzyer/readline#Config for more information on readline.
 	IsVimMode bool
 
 	// Templates can be used to customize the select output. If nil is passed, the
-	// default templates are used.
+	// default templates are used. See the SelectTemplates docs for more info.
 	Templates *SelectTemplates
 
-	// Keys can be used to change movement and search keys.
+	// Keys is the set of keys used in select mode to control the command line interface. See the SelectKeys docs for
+	// more info.
 	Keys *SelectKeys
 
-	// Searcher can be implemented to teach the select how to search for items.
+	// Searcher is a function that can be implemented to refine the base searching algorithm in selects.
+	//
+	// Search is a function that will receive the searched term and the base item and should return a boolean
+	// for whether or not the terms are alike. It is unimplemented by default and search will not work unless
+	// it is implemented.
 	Searcher list.Searcher
 
-	// Starts the prompt in search mode.
+	// StartInSearchMode sets whether or not the select mdoe should start in search mode or selection mode.
+	// For search mode to work, the Search property must be implemented.
 	StartInSearchMode bool
 
 	label string
@@ -51,32 +95,49 @@ type Select struct {
 	list *list.List
 }
 
-// SelectKeys defines which keys can be used for movement and search.
+// SelectKeys defines the available keys used by select mode to enable the user to move around the list
+// and trigger search mode. See the Key struct docs for more information on keys.
 type SelectKeys struct {
-	Next     Key // Next defaults to down arrow key
-	Prev     Key // Prev defaults to up arrow key
-	PageUp   Key // PageUp defaults to left arrow key
-	PageDown Key // PageDown defaults to right arrow key
-	Search   Key // Search defaults to '/' key
+	// Next is the key used to move to the next element inside the list. Defaults to down arrow key.
+	Next     Key
+
+	// Prev is the key used to move to the previous element inside the list. Defaults to up arrow key.
+	Prev     Key
+
+	// PageUp is the key used to jump back to the first element inside the list. Defaults to left arrow key.
+	PageUp   Key
+
+	// PageUp is the key used to jump forward to the last element inside the list. Defaults to right arrow key.
+	PageDown Key
+
+	// Search is the key used to trigger the search mode for the list. Default to the "/" key.
+	Search   Key
 }
 
-// Key defines a keyboard code and a display representation for the help
-// Check https://github.com/chzyer/readline for a list of codes
+// Key defines a keyboard code and a display representation for the help menu.
 type Key struct {
+	// Code is a rune that will be used to compare against typed keys with readline.
+	// Check https://github.com/chzyer/readline for a list of codes
 	Code    rune
+
+	// Display is the string that will be displayed inside the help menu to help inform the user
+	// of which key to use on his keyboard for various functions.
 	Display string
 }
 
 // SelectTemplates allow a select prompt to be customized following stdlib
-// text/template syntax. If any field is blank a default template is used.
+// text/template syntax. Custom state, colors and background color are available for use inside
+// the templates and are documented inside the Variable section of the docs.
 type SelectTemplates struct {
-	// Active is a text/template for the label.
+	// Label is a text/template for the main command line label. Defaults to printing the label as it with
+	// the IconInitial.
 	Label string
 
-	// Active is a text/template for when an item is current active.
+	// Active is a text/template for when an item is currently active within the list.
 	Active string
 
-	// Inactive is a text/template for when an item is not current active.
+	// Inactive is a text/template for when an item is not currently active inside the list. This
+	// template is used for all items unless they are active or selected.
 	Inactive string
 
 	// Selected is a text/template for when an item was successfully selected.
@@ -84,6 +145,12 @@ type SelectTemplates struct {
 
 	// Details is a text/template for when an item current active to show
 	// additional information. It can have multiple lines.
+	//
+	// Detail will always be displayed for the active element and thus can be used to display additional
+	// information on the element beyond its label.
+	//
+	// To make this field multilinne, a literal template must be used (``). Prompt-ui will not trim spaces
+	// and tabs will be displayed if the template is indented.
 	Details string
 
 	// Help is a text/template for displaying instructions at the top. By default
