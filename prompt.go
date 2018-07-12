@@ -228,7 +228,7 @@ func (p *Prompt) Run() (string, error) {
 		echo = strings.Repeat(string(p.Mask), len(echo))
 	}
 
-	prompt := render(p.Templates.valid, p.Label)
+	prompt := render(p.Templates.success, p.Label)
 	prompt = append(prompt, []byte(echo)...)
 
 	if p.IsConfirm {
