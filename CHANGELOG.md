@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- Proper documentation for GoDoc
+- Improved documentation for GoDoc
 
 ### Fixed
 
