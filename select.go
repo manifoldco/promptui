@@ -19,7 +19,7 @@ import (
 const SelectedAdd = -1
 
 // Select represents a list of items used to enable selections, they can be used as search engines, menus
-// or even to add new entries inside a list of records thanks ot its add mode.
+// or as a list of items in a cli based prompt.
 //
 // Basic Usage
 // 		package main
@@ -32,20 +32,20 @@ const SelectedAdd = -1
 //
 //		func main() {
 //			prompt := promptui.Select{
-//			Label: "Select Day",
-//			Items: []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
-//				"Saturday", "Sunday"},
+//				Label: "Select Day",
+//				Items: []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+//					"Saturday", "Sunday"},
+//			}
+//
+//			_, result, err := prompt.Run()
+//
+//			if err != nil {
+//				fmt.Printf("Prompt failed %v\n", err)
+//				return
+//			}
+//
+//			fmt.Printf("You choose %q\n", result)
 //		}
-//
-//		_, result, err := prompt.Run()
-//
-//		if err != nil {
-//			fmt.Printf("Prompt failed %v\n", err)
-//			return
-//		}
-//
-//		fmt.Printf("You choose %q\n", result)
-//	}
 type Select struct {
 	// Label is the text displayed on top of the list to direct input. The IconInitial value "?" will be
 	// appended automatically to the label so it does not need to be added.
@@ -81,7 +81,7 @@ type Select struct {
 
 	// Searcher is a function that can be implemented to refine the base searching algorithm in selects.
 	//
-	// Search is a function that will receive the searched term and the base item and should return a boolean
+	// Search is a function that will receive the searched term and the item's index and should return a boolean
 	// for whether or not the terms are alike. It is unimplemented by default and search will not work unless
 	// it is implemented.
 	Searcher list.Searcher
@@ -125,7 +125,7 @@ type Key struct {
 	Display string
 }
 
-// SelectTemplates allow a select prompt to be customized following stdlib
+// SelectTemplates allow a select list to be customized following stdlib
 // text/template syntax. Custom state, colors and background color are available for use inside
 // the templates and are documented inside the Variable section of the docs.
 type SelectTemplates struct {
@@ -149,7 +149,7 @@ type SelectTemplates struct {
 	// Detail will always be displayed for the active element and thus can be used to display additional
 	// information on the element beyond its label.
 	//
-	// To make this field multilinne, a literal template must be used (``). Prompt-ui will not trim spaces
+	// To make this field multi-line, a literal template must be used (``). Prompt-ui will not trim spaces
 	// and tabs will be displayed if the template is indented.
 	Details string
 
@@ -157,8 +157,11 @@ type SelectTemplates struct {
 	// it shows keys for movement and search.
 	Help string
 
-	// FuncMap is a map of helpers for the templates. If nil, the default helpers
-	// are used.
+	// FuncMap is a map of helper functions that can be used inside of templates according to the text/template
+	// documentation.
+	//
+	// By default, FuncMap contains the color functions used to color the text in templates. If FuncMap
+	// is overridden, the colors functions must be added in the override from promptui.FuncMap to work.
 	FuncMap template.FuncMap
 
 	label    *template.Template
@@ -169,8 +172,10 @@ type SelectTemplates struct {
 	help     *template.Template
 }
 
-// Run runs the Select list. It returns the index of the selected element,
-// and its value.
+// Run executes the select list. Its displays the label and the list of items, asking the user to chose any
+// value within to list. Run will keep the prompt alive until it has been canceled from
+// the command prompt or it has received a valid value. It will return the value and an error if any
+// occurred during the select's execution.
 func (s *Select) Run() (int, string, error) {
 	if s.Size == 0 {
 		s.Size = 5
@@ -449,23 +454,63 @@ func (s *Select) prepareTemplates() error {
 	return nil
 }
 
-// SelectWithAdd represents a list for selecting a single item, or selecting
-// a newly created item.
+// SelectWithAdd represents a list for selecting a single item inside a list of items with the possibility to
+// add new items to the list.
+//
+// Basic Usage
+// 		package main
+//
+//		import (
+//			"fmt"
+//
+//			"github.com/manifoldco/promptui"
+//		)
+//
+//		func main() {
+//			prompt := promptui.SelectWithAdd{
+//				Label:    "What's your text editor",
+//				Items:    []string{"Vim", "Emacs", "Sublime", "VSCode", "Atom"},
+//				AddLabel: "Other",
+//			}
+//
+//			_, result, err := prompt.Run()
+//
+//			if err != nil {
+//				fmt.Printf("Prompt failed %v\n", err)
+//				return
+//			}
+//
+//			fmt.Printf("You choose %s\n", result)
+//		}
 type SelectWithAdd struct {
-	Label string   // Label is the value displayed on the command line prompt.
-	Items []string // Items are the items to use in the list.
+	// Label is the text displayed on top of the list to direct input. The IconInitial value "?" will be
+	// appended automatically to the label so it does not need to be added.
+	Label string
 
-	AddLabel string // The label used in the item list for creating a new item.
+	// Items are the items to display inside the list. Each item will be listed individually with the
+	// AddLabel as the last item of the list.
+	Items []string
 
-	// Validate is optional. If set, this function is used to validate the input
-	// after each character entry.
+	// AddLabel is the label used for the last item of the list that enables adding a new item.
+	// Selecting this item in the list displays the add item prompt using promptui/prompt.
+	AddLabel string
+
+	// Validate is an optional function that fill be used against the entered value in the prompt to validate it.
+	// If the value is valid, it is returned to the callee to be added in the list.
 	Validate ValidateFunc
 
-	IsVimMode bool // Whether readline is using Vim mode.
+	// IsVimMode sets whether to use vim mode when using readline in the command prompt. Look at
+	// https://godoc.org/github.com/chzyer/readline#Config for more information on readline.
+	IsVimMode bool
 }
 
-// Run runs the Select list. It returns the index of the selected element,
-// and its value. If a new element is created, -1 is returned as the index.
+// Run executes the select list. Its displays the label and the list of items, asking the user to chose any
+// value within to list or add his own. Run will keep the prompt alive until it has been canceled from
+// the command prompt or it has received a valid value.
+//
+// If the addLabel is selected in the list, this function will return a -1 index with the added label and no error.
+// Otherwise, it will return the index and the value of the selected item. In any case, if an error is triggered, it
+// will also return the error as its third return value.
 func (sa *SelectWithAdd) Run() (int, string, error) {
 	if len(sa.Items) > 0 {
 		newItems := append([]string{sa.AddLabel}, sa.Items...)

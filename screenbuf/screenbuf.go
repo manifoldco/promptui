@@ -26,7 +26,7 @@ type ScreenBuf struct {
 	height int
 }
 
-// New creates and initializes a new ScreenBuf.
+// New creates and initializes a new ScreenBuf struct.
 func New(w io.Writer) *ScreenBuf {
 	return &ScreenBuf{buf: &bytes.Buffer{}, w: w}
 }
@@ -40,7 +40,7 @@ func (s *ScreenBuf) Reset() {
 
 // Write writes a single line to the underlining buffer. If the ScreenBuf was
 // previously reset, all previous lines are cleared and the output starts from
-// the top. Lines with \r or \n will fail since they can interfere with the
+// the top. Lines with \r or \n will cause an error since they can interfere with the
 // terminal ability to move between lines.
 func (s *ScreenBuf) Write(b []byte) (int, error) {
 	if bytes.ContainsAny(b, "\r\n") {
@@ -97,7 +97,7 @@ func (s *ScreenBuf) Write(b []byte) (int, error) {
 	}
 }
 
-// Flush writes any buffered data to the underlying io.Writer.
+// Flush writes any buffered data to the underlying io.Writer, essentially clearing the console.
 func (s *ScreenBuf) Flush() error {
 	for i := s.cursor; i < s.height; i++ {
 		if i < s.height {

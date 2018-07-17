@@ -12,31 +12,70 @@ import (
 
 const cursor = "\u2588"
 
-// Prompt represents a single line text field input.
+// Prompt represents a single line text field input with options for validation and input masks.
+//
+// Basic Usage
+// 		package main
+//
+//		import (
+//			"errors"
+//			"fmt"
+//			"strconv"
+//
+//			"github.com/manifoldco/promptui"
+//		)
+//
+//		func main() {
+//			validate := func(input string) error {
+//				_, err := strconv.ParseFloat(input, 64)
+//				if err != nil {
+//					return errors.New("Invalid number")
+//				}
+//				return nil
+//			}
+//
+//			prompt := promptui.Prompt{
+//				Label:    "Number",
+//				Validate: validate,
+//			}
+//
+//			result, err := prompt.Run()
+//
+//			if err != nil {
+//				fmt.Printf("Prompt failed %v\n", err)
+//				return
+//			}
+//
+//			fmt.Printf("You choose %q\n", result)
+//		}
 type Prompt struct {
-	// Label is the value displayed on the command line prompt. It can be any
-	// value one would pass to a text/template Execute(), including just a string.
+	// Label is the value displayed on the command line prompt.
+	//
+	// The value for Label can be a simple string or a struct that will need to be accessed by dot notation
+	// inside the templates. For example, `{{ .Name }}` will display the name property of a struct.
 	Label interface{}
 
-	Default string // Default is the initial value to populate in the prompt
+	// Default is the initial value for the prompt. This value will be displayed next to the prompt's label
+	// and the user will be able to view or change it depending on the options.
+	Default string
 
 	// AllowEdit lets the user edit the default value. If false, any key press
 	// other than <Enter> automatically clears the default value.
 	AllowEdit bool
 
-	// Validate is optional. If set, this function is used to validate the input
-	// after each character entry.
+	// Validate is an optional function that fill be used against the entered value in the prompt to validate it.
 	Validate ValidateFunc
 
-	// If mask is set, this value is displayed instead of the actual input
-	// characters.
+	// Mask is an optional rune that sets which character to display instead of the entered characters. This
+	// allows hiding private information like passwords.
 	Mask rune
 
 	// Templates can be used to customize the prompt output. If nil is passed, the
-	// default templates are used.
+	// default templates are used. See the PromptTemplates docs for more info.
 	Templates *PromptTemplates
 
-	// IsConfirm sets the prompt to be a [y/N] question.
+	// IsConfirm makes the prompt ask for a yes or no ([Y/N]) question rather than request an input. When set,
+	// most properties related to input will be ignored.
 	IsConfirm bool
 
 	// IsVimMode enables vi-like movements (hjkl) and editing.
@@ -47,28 +86,35 @@ type Prompt struct {
 }
 
 // PromptTemplates allow a prompt to be customized following stdlib
-// text/template syntax. If any field is blank a default template is used.
+// text/template syntax. Custom state, colors and background color are available for use inside
+// the templates and are documented inside the Variable section of the docs.
 type PromptTemplates struct {
-	// Prompt is a text/template for the initial prompt question.
+	// Prompt is a text/template for the prompt label displayed on the left side of the prompt.
 	Prompt string
 
-	// Prompt is a text/template if the prompt is a confirmation.
+	// Prompt is a text/template for the prompt label when IsConfirm is set as true.
 	Confirm string
 
-	// Valid is a text/template for when the current input is valid.
+	// Valid is a text/template for the prompt label when the value entered is valid.
 	Valid string
 
-	// Invalid is a text/template for when the current input is invalid.
+	// Invalid is a text/template for the prompt label when the value entered is invalid.
 	Invalid string
 
-	// Success is a text/template for the successful result.
+	// Success is a text/template for the prompt label when the user has pressed entered and the value has been
+	// deemed valid by the validation function. The label will keep using this template even when the prompt ends
+	// inside the console.
 	Success string
 
-	// Prompt is a text/template when there is a validation error.
+	// Prompt is a text/template for the prompt label when the value is invalid dur to an error triggered from
+	// the prompt's validation function.
 	ValidationError string
 
-	// FuncMap is a map of helpers for the templates. If nil, the default helpers
-	// are used.
+	// FuncMap is a map of helper functions that can be used inside of templates according to the text/template
+	// documentation.
+	//
+	// By default, FuncMap contains the color functions used to color the text in templates. If FuncMap
+	// is overridden, the colors functions must be added in the override from promptui.FuncMap to work.
 	FuncMap template.FuncMap
 
 	prompt     *template.Template
@@ -78,7 +124,9 @@ type PromptTemplates struct {
 	success    *template.Template
 }
 
-// Run runs the prompt, returning the validated input.
+// Run executes the prompt. Its displays the label and default value if any, asking the user to enter a value.
+// Run will keep the prompt alive until it has been canceled from the command prompt or it has received a valid
+// value. It will return the value and an error if any occurred during the prompt's execution.
 func (p *Prompt) Run() (string, error) {
 	c := &readline.Config{}
 	err := c.Init()

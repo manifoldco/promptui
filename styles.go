@@ -2,7 +2,7 @@
 
 package promptui
 
-// These are the default icons used bu prompt-ui for select and prompts. They can either be overriden directly
+// These are the default icons used bu prompt-ui for select and prompts. They can either be overridden directly
 // from these variable or customized through the use of custom templates
 var (
 	// IconInitial is the icon used when starting in prompt mode and the icon next to the label when

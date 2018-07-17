@@ -6,7 +6,9 @@ import (
 	"strings"
 )
 
-// Searcher can be implemented to allow the list to search for results.
+// Searcher is a base function signature that is used inside select when activating the search mode.
+// If defined, it is called on each items of the select and should return a boolean for whether or not
+// the item fits the searched term.
 type Searcher func(input string, index int) bool
 
 // NotFound is an index returned when no item was selected. This could
@@ -25,8 +27,8 @@ type List struct {
 	Searcher Searcher
 }
 
-// New creates and initializes a list. Items must be a slice type and size must
-// be greater than 0.
+// New creates and initializes a list of searchable items. The items attribute must be a slice of items with a
+// size greater than 0. Error will be returned if those two conditions are not met.
 func New(items interface{}, size int) (*List, error) {
 	if size < 1 {
 		return nil, fmt.Errorf("list size %d must be greater than 0", size)
@@ -61,7 +63,7 @@ func (l *List) Prev() {
 }
 
 // Search allows the list to be filtered by a given term. The list must
-// implement the searcher method for that.
+// implement the searcher function signature for this functionality to work.
 func (l *List) Search(term string) {
 	term = strings.Trim(term, " ")
 	l.cursor = 0
@@ -159,7 +161,8 @@ func (l *List) CanPageUp() bool {
 	return l.start > 0
 }
 
-// Index returns the index of the item currently selected.
+// Index returns the index of the item currently selected inside the searched list. If no item is selected,
+// the NotFound (-1) index will be returned instead.
 func (l *List) Index() int {
 	selected := l.scope[l.cursor]
 
