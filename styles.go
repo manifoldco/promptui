@@ -10,14 +10,14 @@ var (
 	IconInitial = Styler(FGBlue)("?")
 
 	// IconGood is the icon used when a good answer is entered in prompt mode.
-	IconGood    = Styler(FGGreen)("✔")
+	IconGood = Styler(FGGreen)("✔")
 
 	// IconWarn is the icon used when a good, but potentially invalid answer is entered in prompt mode.
-	IconWarn    = Styler(FGYellow)("⚠")
+	IconWarn = Styler(FGYellow)("⚠")
 
 	// IconBad is the icon used when a bad answer is entered in prompt mode.
-	IconBad     = Styler(FGRed)("✗")
+	IconBad = Styler(FGRed)("✗")
 
 	// IconSelect is the icon used to identify the currently selected item in select mode.
-	IconSelect  = Styler(FGBold)("▸")
+	IconSelect = Styler(FGBold)("▸")
 )

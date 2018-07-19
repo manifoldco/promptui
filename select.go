@@ -99,26 +99,26 @@ type Select struct {
 // and trigger search mode. See the Key struct docs for more information on keys.
 type SelectKeys struct {
 	// Next is the key used to move to the next element inside the list. Defaults to down arrow key.
-	Next     Key
+	Next Key
 
 	// Prev is the key used to move to the previous element inside the list. Defaults to up arrow key.
-	Prev     Key
+	Prev Key
 
 	// PageUp is the key used to jump back to the first element inside the list. Defaults to left arrow key.
-	PageUp   Key
+	PageUp Key
 
 	// PageUp is the key used to jump forward to the last element inside the list. Defaults to right arrow key.
 	PageDown Key
 
 	// Search is the key used to trigger the search mode for the list. Default to the "/" key.
-	Search   Key
+	Search Key
 }
 
 // Key defines a keyboard code and a display representation for the help menu.
 type Key struct {
 	// Code is a rune that will be used to compare against typed keys with readline.
 	// Check https://github.com/chzyer/readline for a list of codes
-	Code    rune
+	Code rune
 
 	// Display is the string that will be displayed inside the help menu to help inform the user
 	// of which key to use on his keyboard for various functions.

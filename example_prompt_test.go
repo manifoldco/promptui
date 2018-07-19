@@ -1,8 +1,8 @@
 package promptui
 
 import (
-	"strconv"
 	"fmt"
+	"strconv"
 )
 
 // This example shows how to use the prompt validator and templates to create a stylized prompt.
@@ -39,4 +39,3 @@ func ExamplePrompt() {
 	// The result of the prompt, if valid, is displayed in a formatted message.
 	fmt.Printf("You answered %s\n", result)
 }
-
