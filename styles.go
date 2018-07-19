@@ -2,8 +2,8 @@
 
 package promptui
 
-// These are the default icons used bu prompt-ui for select and prompts. They can either be overridden directly
-// from these variable or customized through the use of custom templates
+// These are the default icons used by promptui for select and prompts. These should not be overridden and instead
+// customized through the use of custom templates
 var (
 	// IconInitial is the icon used when starting in prompt mode and the icon next to the label when
 	// starting in select mode.
@@ -18,6 +18,6 @@ var (
 	// IconBad is the icon used when a bad answer is entered in prompt mode.
 	IconBad     = Styler(FGRed)("✗")
 
-	// IconBad is the icon used to identify the currently selected item in select mode.
+	// IconSelect is the icon used to identify the currently selected item in select mode.
 	IconSelect  = Styler(FGBold)("▸")
 )

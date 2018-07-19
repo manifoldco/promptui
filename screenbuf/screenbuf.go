@@ -26,7 +26,7 @@ type ScreenBuf struct {
 	height int
 }
 
-// New creates and initializes a new ScreenBuf struct.
+// New creates and initializes a new ScreenBuf.
 func New(w io.Writer) *ScreenBuf {
 	return &ScreenBuf{buf: &bytes.Buffer{}, w: w}
 }
@@ -97,7 +97,7 @@ func (s *ScreenBuf) Write(b []byte) (int, error) {
 	}
 }
 
-// Flush writes any buffered data to the underlying io.Writer, essentially clearing the console.
+// Flush writes any buffered data to the underlying io.Writer, ensuring that any pending data is displayed.
 func (s *ScreenBuf) Flush() error {
 	for i := s.cursor; i < s.height; i++ {
 		if i < s.height {

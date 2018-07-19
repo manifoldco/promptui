@@ -11,10 +11,9 @@ const esc = "\033["
 
 type attribute int
 
-// Define the possible state of text inside the application, either Bold, faint, italic or underline.
+// The possible state of text inside the application, either Bold, faint, italic or underline.
 //
-// By using an identifier in templates similar to `"{{ . | underline }}"`, one of these state will be given to the
-// text through the use of the Styler function.
+// These constants are called through the use of the Styler function.
 const (
 	reset attribute = iota
 
@@ -24,10 +23,9 @@ const (
 	FGUnderline
 )
 
-// Define the possible colors of text inside the application.
+// The possible colors of text inside the application.
 //
-// By using an identifier in templates similar to `"{{ . | cyan }}"`, one of these colors will be given to the
-// text through the use of the Styler function.
+// These constants are called through the use of the Styler function.
 const (
 	FGBlack attribute = iota + 30
 	FGRed
@@ -39,10 +37,9 @@ const (
 	FGWhite
 )
 
-// Define the possible background colors of text inside the application.
+// The possible background colors of text inside the application.
 //
-// By using an identifier in templates similar to `"{{ . | red | cyan }}"`, where the second color is
-// the background color, one of these colors will be given to the text through the use of the Styler function.
+// These constants are called through the use of the Styler function.
 const (
 	BGBlack attribute = iota + 40
 	BGRed
@@ -63,11 +60,10 @@ const (
 	clearLine  = esc + "2K"
 )
 
-// FuncMap defines template helpers for the output. It can be extended as a
-// regular map.
+// FuncMap defines template helpers for the output. It can be extended as a regular map.
 //
-// The function maps the state, color and background colors constants to string inside the promptui
-// templates. This allows the link between the string "black" in a template and the constant FGBlack.
+// The functions inside the map link the state, color and background colors strings detected in templates to a Styler
+// function that applies the given style using the corresponding constant.
 var FuncMap = template.FuncMap{
 	"black":     Styler(FGBlack),
 	"red":       Styler(FGRed),
@@ -99,12 +95,12 @@ func movementCode(n uint, code rune) string {
 	return esc + strconv.FormatUint(uint64(n), 10) + string(code)
 }
 
-// Styler is a closure that accepts multiple possible styling transforms from the state,
+// Styler is a function that accepts multiple possible styling transforms from the state,
 // color and background colors constants and transforms them into a templated string
 // to apply those styles in the CLI.
 //
 // The returned styling function accepts a string that will be extended with
-// the original function's styling attributes.
+// the wrapping function's styling attributes.
 func Styler(attrs ...attribute) func(interface{}) string {
 	attrstrs := make([]string, len(attrs))
 	for i, v := range attrs {

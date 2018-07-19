@@ -13,41 +13,6 @@ import (
 const cursor = "\u2588"
 
 // Prompt represents a single line text field input with options for validation and input masks.
-//
-// Basic Usage
-// 		package main
-//
-//		import (
-//			"errors"
-//			"fmt"
-//			"strconv"
-//
-//			"github.com/manifoldco/promptui"
-//		)
-//
-//		func main() {
-//			validate := func(input string) error {
-//				_, err := strconv.ParseFloat(input, 64)
-//				if err != nil {
-//					return errors.New("Invalid number")
-//				}
-//				return nil
-//			}
-//
-//			prompt := promptui.Prompt{
-//				Label:    "Number",
-//				Validate: validate,
-//			}
-//
-//			result, err := prompt.Run()
-//
-//			if err != nil {
-//				fmt.Printf("Prompt failed %v\n", err)
-//				return
-//			}
-//
-//			fmt.Printf("You choose %q\n", result)
-//		}
 type Prompt struct {
 	// Label is the value displayed on the command line prompt.
 	//
@@ -88,6 +53,22 @@ type Prompt struct {
 // PromptTemplates allow a prompt to be customized following stdlib
 // text/template syntax. Custom state, colors and background color are available for use inside
 // the templates and are documented inside the Variable section of the docs.
+//
+// Examples
+//
+// text/templates use a special notation to display programmable content. Using the double bracket notation,
+// the value can be printed with specific helper functions. For example
+//
+// This displays the value given to the template as pure, unstylized text.
+// 	'{{ . }}'
+//
+// This displays the value colored in cyan
+// 	'{{ . | cyan }}'
+//
+// This displays the value colored in red with a cyan background-color
+// 	'{{ . | red | cyan }}'
+//
+// See the doc of text/template for more info: https://golang.org/pkg/text/template/
 type PromptTemplates struct {
 	// Prompt is a text/template for the prompt label displayed on the left side of the prompt.
 	Prompt string

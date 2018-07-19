@@ -27,7 +27,7 @@ type List struct {
 	Searcher Searcher
 }
 
-// New creates and initializes a list of searchable items. The items attribute must be a slice of items with a
+// New creates and initializes a list of searchable items. The items attribute must be a slice type with a
 // size greater than 0. Error will be returned if those two conditions are not met.
 func New(items interface{}, size int) (*List, error) {
 	if size < 1 {
@@ -162,7 +162,7 @@ func (l *List) CanPageUp() bool {
 }
 
 // Index returns the index of the item currently selected inside the searched list. If no item is selected,
-// the NotFound (-1) index will be returned instead.
+// the NotFound (-1) index is returned.
 func (l *List) Index() int {
 	selected := l.scope[l.cursor]
 

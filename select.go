@@ -56,7 +56,7 @@ type Select struct {
 
 	// Items are the items to display inside the list. It expect a slice of any kind of values, including strings.
 	//
-	// If using a slice a strings, prompt-ui will use those strings directly into its base templates or the
+	// If using a slice a strings, promptui will use those strings directly into its base templates or the
 	// provided templates. If using any other type in the slice, it will attempt to transform it into a string
 	// before giving it to its templates. Custom templates will override this behavior if using the dot notation
 	// inside the templates.
@@ -128,6 +128,28 @@ type Key struct {
 // SelectTemplates allow a select list to be customized following stdlib
 // text/template syntax. Custom state, colors and background color are available for use inside
 // the templates and are documented inside the Variable section of the docs.
+//
+// Examples
+//
+// text/templates use a special notation to display programmable content. Using the double bracket notation,
+// the value can be printed with specific helper functions. For example
+//
+// This displays the value given to the template as pure, unstylized text. Structs are transformed to string
+// with this notation.
+// 	'{{ . }}'
+//
+// This displays the name property of the value colored in cyan
+// 	'{{ .Name | cyan }}'
+//
+// This displays the label property of value colored in red with a cyan background-color
+// 	'{{ .Label | red | cyan }}'
+//
+// See the doc of text/template for more info: https://golang.org/pkg/text/template/
+//
+// Notes
+//
+// Setting any of these templates will remove the icons from the default templates. They must
+// be added back in each of their specific templates. The styles.go constants contains the default icons.
 type SelectTemplates struct {
 	// Label is a text/template for the main command line label. Defaults to printing the label as it with
 	// the IconInitial.
@@ -149,8 +171,7 @@ type SelectTemplates struct {
 	// Detail will always be displayed for the active element and thus can be used to display additional
 	// information on the element beyond its label.
 	//
-	// To make this field multi-line, a literal template must be used (``). Prompt-ui will not trim spaces
-	// and tabs will be displayed if the template is indented.
+	// promptui will not trim spaces and tabs will be displayed if the template is indented.
 	Details string
 
 	// Help is a text/template for displaying instructions at the top. By default
@@ -456,42 +477,16 @@ func (s *Select) prepareTemplates() error {
 
 // SelectWithAdd represents a list for selecting a single item inside a list of items with the possibility to
 // add new items to the list.
-//
-// Basic Usage
-// 		package main
-//
-//		import (
-//			"fmt"
-//
-//			"github.com/manifoldco/promptui"
-//		)
-//
-//		func main() {
-//			prompt := promptui.SelectWithAdd{
-//				Label:    "What's your text editor",
-//				Items:    []string{"Vim", "Emacs", "Sublime", "VSCode", "Atom"},
-//				AddLabel: "Other",
-//			}
-//
-//			_, result, err := prompt.Run()
-//
-//			if err != nil {
-//				fmt.Printf("Prompt failed %v\n", err)
-//				return
-//			}
-//
-//			fmt.Printf("You choose %s\n", result)
-//		}
 type SelectWithAdd struct {
 	// Label is the text displayed on top of the list to direct input. The IconInitial value "?" will be
 	// appended automatically to the label so it does not need to be added.
 	Label string
 
 	// Items are the items to display inside the list. Each item will be listed individually with the
-	// AddLabel as the last item of the list.
+	// AddLabel as the first item of the list.
 	Items []string
 
-	// AddLabel is the label used for the last item of the list that enables adding a new item.
+	// AddLabel is the label used for the first item of the list that enables adding a new item.
 	// Selecting this item in the list displays the add item prompt using promptui/prompt.
 	AddLabel string
 
