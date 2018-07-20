@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+
+- Improved documentation for GoDoc
+
+### Fixed
+
+- `success` template was not properly displayed after a successful prompt.
+
 ## [0.3.0] - 2018-05-22
 
 ### Added

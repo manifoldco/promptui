@@ -1,22 +1,20 @@
-package main
+package promptui
 
-import (
-	"fmt"
+import "fmt"
 
-	"github.com/manifoldco/promptui"
-)
-
-func main() {
+// This example shows how to create a SelectWithAdd that will add each new item it is given to the
+// list of items until one is chosen.
+func ExampleSelectWithAdd() {
 	items := []string{"Vim", "Emacs", "Sublime", "VSCode", "Atom"}
 	index := -1
 	var result string
 	var err error
 
 	for index < 0 {
-		prompt := promptui.SelectWithAdd{
+		prompt := SelectWithAdd{
 			Label:    "What's your text editor",
 			Items:    items,
-			AddLabel: "Other",
+			AddLabel: "Add your own",
 		}
 
 		index, result, err = prompt.Run()
