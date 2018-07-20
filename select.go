@@ -20,32 +20,6 @@ const SelectedAdd = -1
 
 // Select represents a list of items used to enable selections, they can be used as search engines, menus
 // or as a list of items in a cli based prompt.
-//
-// Basic Usage
-// 		package main
-//
-//		import (
-//			"fmt"
-//
-//			"github.com/manifoldco/promptui"
-//		)
-//
-//		func main() {
-//			prompt := promptui.Select{
-//				Label: "Select Day",
-//				Items: []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
-//					"Saturday", "Sunday"},
-//			}
-//
-//			_, result, err := prompt.Run()
-//
-//			if err != nil {
-//				fmt.Printf("Prompt failed %v\n", err)
-//				return
-//			}
-//
-//			fmt.Printf("You choose %q\n", result)
-//		}
 type Select struct {
 	// Label is the text displayed on top of the list to direct input. The IconInitial value "?" will be
 	// appended automatically to the label so it does not need to be added.

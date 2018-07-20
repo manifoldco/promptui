@@ -16,6 +16,6 @@ var (
 	// IconBad is the icon used when a bad answer is entered in prompt mode.
 	IconBad = Styler(FGRed)("x")
 
-	// IconBad is the icon used to identify the currently selected item in select mode.
+	// IconSelect is the icon used to identify the currently selected item in select mode.
 	IconSelect = Styler(FGBold)(">")
 )
