@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Improved documentation for GoDoc
+- Navigation keys information for Windows
 
 ### Fixed
 
