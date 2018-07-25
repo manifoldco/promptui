@@ -526,10 +526,10 @@ func (s *Select) setKeys() {
 		return
 	}
 	s.Keys = &SelectKeys{
-		Prev:     Key{Code: KeyPrev, Display: "↑"},
-		Next:     Key{Code: KeyNext, Display: "↓"},
-		PageUp:   Key{Code: KeyBackward, Display: "←"},
-		PageDown: Key{Code: KeyForward, Display: "→"},
+		Prev:     Key{Code: KeyPrev, Display: KeyPrevDisplay},
+		Next:     Key{Code: KeyNext, Display: KeyNextDisplay},
+		PageUp:   Key{Code: KeyBackward, Display: KeyBackwardDisplay},
+		PageDown: Key{Code: KeyForward, Display: KeyForwardDisplay},
 		Search:   Key{Code: '/', Display: "/"},
 	}
 }

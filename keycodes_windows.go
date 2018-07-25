@@ -12,14 +12,18 @@ var (
 	// FIXME: keys below are not triggered by readline, not working on Windows
 
 	// KeyPrev is the default key to go up during selection inside a command line prompt.
-	KeyPrev rune = 38
+	KeyPrev        rune = 38
+	KeyPrevDisplay      = "k"
 
 	// KeyNext is the default key to go down during selection inside a command line prompt.
-	KeyNext rune = 40
+	KeyNext        rune = 40
+	KeyNextDisplay      = "j"
 
 	// KeyBackward is the default key to page up during selection inside a command line prompt.
-	KeyBackward rune = 37
+	KeyBackward        rune = 37
+	KeyBackwardDisplay      = "h"
 
 	// KeyForward is the default key to page down during selection inside a command line prompt.
-	KeyForward rune = 39
+	KeyForward        rune = 39
+	KeyForwardDisplay      = "l"
 )
