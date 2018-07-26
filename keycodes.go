@@ -14,14 +14,18 @@ var (
 	KeyBackspace rune = readline.CharBackspace
 
 	// KeyPrev is the default key to go up during selection.
-	KeyPrev rune = readline.CharPrev
+	KeyPrev        rune = readline.CharPrev
+	KeyPrevDisplay      = "↑"
 
 	// KeyNext is the default key to go down during selection.
-	KeyNext rune = readline.CharNext
+	KeyNext        rune = readline.CharNext
+	KeyNextDisplay      = "↓"
 
 	// KeyBackward is the default key to page up during selection.
-	KeyBackward rune = readline.CharBackward
+	KeyBackward        rune = readline.CharBackward
+	KeyBackwardDisplay      = "←"
 
 	// KeyForward is the default key to page down during selection.
-	KeyForward rune = readline.CharForward
+	KeyForward        rune = readline.CharForward
+	KeyForwardDisplay      = "→"
 )
