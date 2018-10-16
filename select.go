@@ -67,6 +67,8 @@ type Select struct {
 	label string
 
 	list *list.List
+
+	Do func(int, string) (interface{}, error)
 }
 
 // SelectKeys defines the available keys used by select mode to enable the user to move around the list
@@ -191,6 +193,15 @@ func (s *Select) Run() (int, string, error) {
 		return 0, "", err
 	}
 	return s.innerRun(0, ' ')
+}
+
+// Runfunc in addition to Run(), it return Do func(), error.
+func (s *Select) Runfunc() (func() (interface{}, error), error) {
+	if s.Do == nil {
+		return nil, fmt.Errorf("Do func not implemented")
+	}
+	index, label, err := s.Run()
+	return func() (interface{}, error) { return s.Do(index, label) }, err
 }
 
 func (s *Select) innerRun(starting int, top rune) (int, string, error) {
