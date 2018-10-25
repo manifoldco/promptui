@@ -103,4 +103,6 @@ func main() {
 
 ### More Examples
 
-See full list of [examples](https://github.com/manifoldco/promptui/tree/master/_examples)
+See full list of [examples](https://github.com/manifoldco/promptui/tree/master/_examples).
+
+IF your interested in using promptui to extend an existing command line app, here is one very flexible [example of how you can use it with cobra](https://github.com/jayunit100/promptui-cobra-example/blob/master/README.md).
