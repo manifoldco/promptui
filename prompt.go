@@ -10,8 +10,6 @@ import (
 	"github.com/manifoldco/promptui/screenbuf"
 )
 
-const cursor = "\u2588"
-
 // Prompt represents a single line text field input with options for validation and input masks.
 type Prompt struct {
 	// Label is the value displayed on the command line prompt.
@@ -45,6 +43,9 @@ type Prompt struct {
 
 	// IsVimMode enables vi-like movements (hjkl) and editing.
 	IsVimMode bool
+
+	// the Pointer defines how to render the cursor.
+	Pointer Pointer
 
 	stdin  io.ReadCloser
 	stdout io.WriteCloser
@@ -163,9 +164,17 @@ func (p *Prompt) Run() (string, error) {
 	}
 	eraseDefault := input != "" && !p.AllowEdit
 
+	cur := NewCursor(input, p.Pointer)
+
+	if eraseDefault {
+		cur.Start()
+	} else {
+		cur.End()
+	}
+
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
 		if line != nil {
-			input += string(line)
+			cur.Update(string(line))
 		}
 
 		switch key {
@@ -175,16 +184,20 @@ func (p *Prompt) Run() (string, error) {
 		case KeyBackspace:
 			if eraseDefault {
 				eraseDefault = false
-				input = ""
+				cur.Replace("")
 			}
-			if len(input) > 0 {
-				r := []rune(input)
-				input = string(r[:len(r)-1])
-			}
+			cur.Backspace()
+		case KeyForward:
+			// the user wants to edit the default, despite how we set it up. Let
+			// them.
+			eraseDefault = false
+			cur.Move(1)
+		case KeyBackward:
+			cur.Move(-1)
 		default:
 			if eraseDefault {
 				eraseDefault = false
-				input = string(line)
+				cur.Update(string(line))
 			}
 		}
 
@@ -200,13 +213,12 @@ func (p *Prompt) Run() (string, error) {
 			}
 		}
 
-		echo := input
+		echo := cur.Format()
 		if p.Mask != 0 {
-			echo = strings.Repeat(string(p.Mask), len(echo))
+			echo = cur.FormatMask(p.Mask)
 		}
 
-		prompt = append(prompt, []byte(echo+cursor)...)
-
+		prompt = append(prompt, []byte(echo)...)
 		sb.Reset()
 		sb.Write(prompt)
 
@@ -222,8 +234,8 @@ func (p *Prompt) Run() (string, error) {
 	})
 
 	for {
-		_, err = rl.Readline()
-
+		p, err := rl.Readline()
+		fmt.Println(p)
 		inputErr = validFn(input)
 		if inputErr == nil {
 			break
@@ -252,9 +264,9 @@ func (p *Prompt) Run() (string, error) {
 		return "", err
 	}
 
-	echo := input
+	echo := cur.Format()
 	if p.Mask != 0 {
-		echo = strings.Repeat(string(p.Mask), len(echo))
+		echo = cur.FormatMask(p.Mask)
 	}
 
 	prompt := render(p.Templates.success, p.Label)

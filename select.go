@@ -67,6 +67,9 @@ type Select struct {
 	label string
 
 	list *list.List
+
+	// A function that determines how to render the cursor
+	Pointer Pointer
 }
 
 // SelectKeys defines the available keys used by select mode to enable the user to move around the list
@@ -218,7 +221,8 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	rl.Write([]byte(hideCursor))
 	sb := screenbuf.New(rl)
 
-	var searchInput []rune
+	cur := NewCursor("", s.Pointer)
+
 	canSearch := s.Searcher != nil
 	searchMode := s.StartInSearchMode
 
@@ -237,7 +241,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 			if searchMode {
 				searchMode = false
-				searchInput = nil
+				cur.Replace("")
 				s.list.CancelSearch()
 			} else {
 				searchMode = true
@@ -247,11 +251,10 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 				break
 			}
 
-			if len(searchInput) > 1 {
-				searchInput = searchInput[:len(searchInput)-1]
-				s.list.Search(string(searchInput))
+			cur.Backspace()
+			if len(cur.Input) > 0 {
+				s.list.Search(string(cur.Input))
 			} else {
-				searchInput = nil
 				s.list.CancelSearch()
 			}
 		case key == s.Keys.PageUp.Code || (key == 'h' && !searchMode):
@@ -260,13 +263,13 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			s.list.PageDown()
 		default:
 			if canSearch && searchMode {
-				searchInput = append(searchInput, line...)
-				s.list.Search(string(searchInput))
+				cur.Update(string(line))
+				s.list.Search(string(cur.Input))
 			}
 		}
 
 		if searchMode {
-			header := fmt.Sprintf("Search: %s%s", string(searchInput), cursor)
+			header := fmt.Sprintf("Search: %s", cur.Format())
 			sb.WriteString(header)
 		} else {
 			help := s.renderHelp(canSearch)
@@ -471,6 +474,9 @@ type SelectWithAdd struct {
 	// IsVimMode sets whether to use vim mode when using readline in the command prompt. Look at
 	// https://godoc.org/github.com/chzyer/readline#Config for more information on readline.
 	IsVimMode bool
+
+	// a function that defines how to render the cursor
+	Pointer Pointer
 }
 
 // Run executes the select list. Its displays the label and the list of items, asking the user to chose any
@@ -495,6 +501,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			IsVimMode: sa.IsVimMode,
 			Size:      5,
 			list:      list,
+			Pointer:   sa.Pointer,
 		}
 		s.setKeys()
 
@@ -516,6 +523,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 		Label:     sa.AddLabel,
 		Validate:  sa.Validate,
 		IsVimMode: sa.IsVimMode,
+		Pointer:   sa.Pointer,
 	}
 	value, err := p.Run()
 	return SelectedAdd, value, err
