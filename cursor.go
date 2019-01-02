@@ -2,8 +2,8 @@ package promptui
 
 import "fmt"
 
-// A specific type that translates a given set of runes into a given set of
-// runes pointed at by the cursor.
+// Pointer is A specific type that translates a given set of runes into a given
+// set of runes pointed at by the cursor.
 type Pointer func(to []rune) []rune
 
 func defaultCursor(ignored []rune) []rune {
@@ -23,15 +23,18 @@ func pipeCursor(input []rune) []rune {
 }
 
 var (
-	// A big square block character. Obscures whatever was input.
+	// DefaultCursor is a big square block character. Obscures whatever was
+	// input.
 	DefaultCursor Pointer = defaultCursor
-	// A cursor which highlights a character by inverting colors on it.
+	// BlockCursor is a cursor which highlights a character by inverting colors
+	// on it.
 	BlockCursor Pointer = blockCursor
-	// A pipe character "|" which appears before the input character.
+	// PipeCursor is a pipe character "|" which appears before the input
+	// character.
 	PipeCursor Pointer = pipeCursor
 )
 
-// tracks the state associated with the movable cursor
+// Cursor tracks the state associated with the movable cursor
 // The strategy is to keep the prompt, input pristine except for requested
 // modifications. The insertion of the cursor happens during a `format` call
 // and we read in new input via an `Update` call
@@ -45,8 +48,8 @@ type Cursor struct {
 	Position int
 }
 
-// create a new cursor, with the DefaultCurso, the specified input, and position
-// at the end of the specified starting input.
+// NewCursor create a new cursor, with the DefaultCurso, the specified input,
+// and position at the end of the specified starting input.
 func NewCursor(startingInput string, pointer Pointer) Cursor {
 	if pointer == nil {
 		pointer = defaultCursor
@@ -60,13 +63,13 @@ func (c *Cursor) String() string {
 		string(c.Cursor([]rune(""))), string(c.Input), c.Position)
 }
 
-// convenience for c.Place(len(c.Input)) so you don't have to know how I
+// End is a convenience for c.Place(len(c.Input)) so you don't have to know how I
 // indexed.
 func (c *Cursor) End() {
 	c.Place(len(c.Input))
 }
 
-// convenience for c.Place(0) so you don't have to know how I
+// Start is convenience for c.Place(0) so you don't have to know how I
 // indexed.
 func (c *Cursor) Start() {
 	c.Place(0)
