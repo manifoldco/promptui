@@ -2,11 +2,14 @@ package promptui
 
 import "fmt"
 
+// A specific type that translates a given set of runes into a given set of
+// runes pointed at by the cursor.
 type Pointer func(to []rune) []rune
 
 func defaultCursor(ignored []rune) []rune {
 	return []rune("\u2588")
 }
+
 func blockCursor(input []rune) []rune {
 	return []rune(fmt.Sprintf("\\e[7m%s\\e[0m", string(input)))
 }
@@ -20,9 +23,12 @@ func pipeCursor(input []rune) []rune {
 }
 
 var (
+	// A big square block character. Obscures whatever was input.
 	DefaultCursor Pointer = defaultCursor
-	BlockCursor   Pointer = blockCursor
-	PipeCursor    Pointer = pipeCursor
+	// A cursor which highlights a character by inverting colors on it.
+	BlockCursor Pointer = blockCursor
+	// A pipe character "|" which appears before the input character.
+	PipeCursor Pointer = pipeCursor
 )
 
 // tracks the state associated with the movable cursor
