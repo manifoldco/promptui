@@ -91,20 +91,18 @@ func format(a []rune, c *Cursor) string {
 	i := c.Position
 	var b []rune
 
+	out := make([]rune, 0)
 	if i < len(a) {
 		b = c.Cursor([]rune(a[i : i+1]))
-		out := make([]rune, 0)
 		out = append(out, a[:i]...)   // does not include i
 		out = append(out, b...)       // add the cursor
 		out = append(out, a[i+1:]...) // add the rest after i
-		return string(out)
 	} else {
 		b = c.Cursor([]rune{})
-		out := make([]rune, 0)
 		out = append(out, a...)
 		out = append(out, b...)
-		return string(out)
 	}
+	return string(out)
 }
 
 // Format renders the Input with the Cursor appropriately positioned.
@@ -117,7 +115,7 @@ func (c *Cursor) Format() string {
 // FormatMask replaces all Input runes with the mask rune.
 func (c *Cursor) FormatMask(mask rune) string {
 	r := make([]rune, len(c.Input))
-	for i, _ := range r {
+	for i := range r {
 		r[i] = mask
 	}
 	return format(r, c)

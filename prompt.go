@@ -234,25 +234,24 @@ func (p *Prompt) Run() (string, error) {
 	})
 
 	for {
-		p, err := rl.Readline()
-		fmt.Println(p)
+		_, err := rl.Readline()
 		inputErr = validFn(input)
 		if inputErr == nil {
 			break
 		}
 
 		if err != nil {
-			switch err {
-			case readline.ErrInterrupt:
-				err = ErrInterrupt
-			case io.EOF:
-				err = ErrEOF
-			}
 			break
 		}
 	}
 
 	if err != nil {
+		switch err {
+		case readline.ErrInterrupt:
+			err = ErrInterrupt
+		case io.EOF:
+			err = ErrEOF
+		}
 		if err.Error() == "Interrupt" {
 			err = ErrInterrupt
 		}
