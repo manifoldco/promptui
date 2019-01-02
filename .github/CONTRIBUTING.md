@@ -49,6 +49,8 @@ changes to your submission during the review process.
 #### Before submitting
 
 - Test your change thoroughly
+- you can run `make bootstrap && make` to ensure that the continuous integration
+  build will succeed
 
 
 # Code of Conduct
