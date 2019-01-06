@@ -351,7 +351,7 @@ func (p *Prompt) prepareTemplates() error {
 	tpls.validation = tpl
 
 	if tpls.Success == "" {
-		tpls.Success = `{{ . | faint }}`
+		tpls.Success = fmt.Sprintf("{{ . | faint }}%s ", Styler(FGFaint)(":"))
 	}
 
 	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.Success)
