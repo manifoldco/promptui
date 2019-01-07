@@ -91,6 +91,43 @@ func (l *List) search(term string) {
 	l.scope = scope
 }
 
+// Start returns the current render start position of the list.
+func (l *List) Start() int {
+	return l.start
+}
+
+// SetStart sets the current scroll position. Values out of bounds will be
+// clamped.
+func (l *List) SetStart(i int) {
+	if i < 0 {
+		i = 0
+	}
+	if i > l.cursor {
+		l.start = l.cursor
+	} else {
+		l.start = i
+	}
+}
+
+// SetCursor sets the position of the cursor in the list. Values out of bounds
+// will be clamped.
+func (l *List) SetCursor(i int) {
+	max := len(l.scope) - 1
+	if i >= max {
+		i = max
+	}
+	if i < 0 {
+		i = 0
+	}
+	l.cursor = i
+
+	if l.start > l.cursor {
+		l.start = l.cursor
+	} else if l.start+l.size <= l.cursor {
+		l.start = l.cursor - l.size + 1
+	}
+}
+
 // Next moves the visible list forward one item. If the selected item is out of
 // view, the new select item becomes the first visible item. If the list is
 // already at the bottom, nothing happens.
