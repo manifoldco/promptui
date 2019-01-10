@@ -183,7 +183,7 @@ func (p *Prompt) Run() (string, error) {
 			inputErr = nil
 		}
 		sb.Flush()
-		return nil, 0, keepOn;
+		return nil, 0, keepOn
 	}
 
 	c.SetListener(listen)
