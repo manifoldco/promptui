@@ -46,15 +46,22 @@ type Cursor struct {
 	Input []rune
 	// Put the cursor before this slice
 	Position int
+	erase    bool
 }
 
 // NewCursor create a new cursor, with the DefaultCurso, the specified input,
 // and position at the end of the specified starting input.
-func NewCursor(startingInput string, pointer Pointer) Cursor {
+func NewCursor(startingInput string, pointer Pointer, eraseDefault bool) Cursor {
 	if pointer == nil {
 		pointer = defaultCursor
 	}
-	return Cursor{Cursor: pointer, Position: len(startingInput), Input: []rune(startingInput)}
+	cur := Cursor{Cursor: pointer, Position: len(startingInput), Input: []rune(startingInput), erase: eraseDefault}
+	if eraseDefault {
+		cur.Start()
+	} else {
+		cur.End()
+	}
+	return cur
 }
 
 func (c *Cursor) String() string {
@@ -132,6 +139,13 @@ func (c *Cursor) Update(newInput string) {
 	c.Move(len(b))
 }
 
+// Get returns a copy of the input
+func (c *Cursor) Get() string {
+	o := make([]rune, len(c.Input))
+	copy(o, c.Input)
+	return string(o)
+}
+
 // Replace replaces the previous input with whatever is specified, and moves the
 // cursor to the end position
 func (c *Cursor) Replace(input string) {
@@ -170,4 +184,38 @@ func (c *Cursor) Backspace() {
 	}
 	// now it's pointing to the i+1th element
 	c.Move(-1)
+}
+
+// Listen is a readline Listener that updates internal cursor state appropriately.
+func (c *Cursor) Listen(line []rune, pos int, key rune) ([]rune, int, bool) {
+	if line != nil {
+		// no matter what, update our internal representation.
+		c.Update(string(line))
+	}
+
+	switch key {
+	case 0: // empty
+	case KeyEnter:
+		return []rune(c.Get()), c.Position, false
+	case KeyBackspace:
+		if c.erase {
+			c.erase = false
+			c.Replace("")
+		}
+		c.Backspace()
+	case KeyForward:
+		// the user wants to edit the default, despite how we set it up. Let
+		// them.
+		c.erase = false
+		c.Move(1)
+	case KeyBackward:
+		c.Move(-1)
+	default:
+		if c.erase {
+			c.erase = false
+			c.Update(string(line))
+		}
+	}
+
+	return []rune(c.Get()), c.Position, true
 }

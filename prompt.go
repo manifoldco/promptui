@@ -106,53 +106,51 @@ type PromptTemplates struct {
 	success    *template.Template
 }
 
+type inputer struct {
+	Cursor
+	erase    bool
+	callback func()
+}
+
+
+
 // Run executes the prompt. Its displays the label and default value if any, asking the user to enter a value.
 // Run will keep the prompt alive until it has been canceled from the command prompt or it has received a valid
 // value. It will return the value and an error if any occurred during the prompt's execution.
 func (p *Prompt) Run() (string, error) {
-	c := &readline.Config{}
-	err := c.Init()
-	if err != nil {
-		return "", err
-	}
+	var err error
 
 	err = p.prepareTemplates()
 	if err != nil {
 		return "", err
 	}
 
-	if p.stdin != nil {
-		c.Stdin = p.stdin
+	c := &readline.Config{
+		Stdin:          p.stdin,
+		Stdout:         p.stdout,
+		EnableMask:     p.Mask != 0,
+		MaskRune:       p.Mask,
+		HistoryLimit:   -1,
+		VimMode:        p.IsVimMode,
+		UniqueEditLine: true,
 	}
 
-	if p.stdout != nil {
-		c.Stdout = p.stdout
+	err = c.Init()
+	if err != nil {
+		return "", err
 	}
-
-	if p.Mask != 0 {
-		c.EnableMask = true
-		c.MaskRune = p.Mask
-	}
-
-	if p.IsVimMode {
-		c.VimMode = true
-	}
-
-	c.HistoryLimit = -1
-	c.UniqueEditLine = true
 
 	rl, err := readline.NewEx(c)
 	if err != nil {
 		return "", err
 	}
-
+	// we're taking over the cursor,  so stop showing it.
 	rl.Write([]byte(hideCursor))
 	sb := screenbuf.New(rl)
 
 	validFn := func(x string) error {
 		return nil
 	}
-
 	if p.Validate != nil {
 		validFn = p.Validate
 	}
@@ -163,45 +161,11 @@ func (p *Prompt) Run() (string, error) {
 		input = ""
 	}
 	eraseDefault := input != "" && !p.AllowEdit
+	cur := NewCursor(input, p.Pointer, eraseDefault)
 
-	cur := NewCursor(input, p.Pointer)
-
-	if eraseDefault {
-		cur.Start()
-	} else {
-		cur.End()
-	}
-
-	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
-		if line != nil {
-			cur.Update(string(line))
-		}
-
-		switch key {
-		case 0: // empty
-		case KeyEnter:
-			return nil, 0, false
-		case KeyBackspace:
-			if eraseDefault {
-				eraseDefault = false
-				cur.Replace("")
-			}
-			cur.Backspace()
-		case KeyForward:
-			// the user wants to edit the default, despite how we set it up. Let
-			// them.
-			eraseDefault = false
-			cur.Move(1)
-		case KeyBackward:
-			cur.Move(-1)
-		default:
-			if eraseDefault {
-				eraseDefault = false
-				cur.Update(string(line))
-			}
-		}
-
-		err := validFn(input)
+	listen := func(input []rune, pos int, key rune) ([]rune, int, bool) {
+		_, _, keepOn := cur.Listen(input, pos, key)
+		err := validFn(cur.Get())
 		var prompt []byte
 
 		if err != nil {
@@ -221,21 +185,20 @@ func (p *Prompt) Run() (string, error) {
 		prompt = append(prompt, []byte(echo)...)
 		sb.Reset()
 		sb.Write(prompt)
-
 		if inputErr != nil {
 			validation := render(p.Templates.validation, inputErr)
 			sb.Write(validation)
 			inputErr = nil
 		}
-
 		sb.Flush()
+		return nil, 0, keepOn;
+	}
 
-		return nil, 0, true
-	})
+	c.SetListener(listen)
 
 	for {
 		_, err := rl.Readline()
-		inputErr = validFn(input)
+		inputErr = validFn(cur.Get())
 		if inputErr == nil {
 			break
 		}
@@ -285,7 +248,7 @@ func (p *Prompt) Run() (string, error) {
 	rl.Write([]byte(showCursor))
 	rl.Close()
 
-	return input, err
+	return cur.Get(), err
 }
 
 func (p *Prompt) prepareTemplates() error {
