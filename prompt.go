@@ -106,14 +106,6 @@ type PromptTemplates struct {
 	success    *template.Template
 }
 
-type inputer struct {
-	Cursor
-	erase    bool
-	callback func()
-}
-
-
-
 // Run executes the prompt. Its displays the label and default value if any, asking the user to enter a value.
 // Run will keep the prompt alive until it has been canceled from the command prompt or it has received a valid
 // value. It will return the value and an error if any occurred during the prompt's execution.
