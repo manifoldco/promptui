@@ -252,8 +252,8 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 			}
 
 			cur.Backspace()
-			if len(cur.Input) > 0 {
-				s.list.Search(string(cur.Input))
+			if len(cur.Get()) > 0 {
+				s.list.Search(string(cur.Get()))
 			} else {
 				s.list.CancelSearch()
 			}
@@ -264,7 +264,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		default:
 			if canSearch && searchMode {
 				cur.Update(string(line))
-				s.list.Search(string(cur.Input))
+				s.list.Search(string(cur.Get()))
 			}
 		}
 

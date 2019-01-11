@@ -43,19 +43,19 @@ type Cursor struct {
 	Cursor Pointer
 	// what the user entered, and what we will echo back to them, after
 	// insertion of the cursor and prefixing with the prompt
-	Input []rune
+	input []rune
 	// Put the cursor before this slice
 	Position int
 	erase    bool
 }
 
-// NewCursor create a new cursor, with the DefaultCurso, the specified input,
+// NewCursor create a new cursor, with the DefaultCursor, the specified input,
 // and position at the end of the specified starting input.
-func NewCursor(startingInput string, pointer Pointer, eraseDefault bool) Cursor {
+func NewCursor(startinginput string, pointer Pointer, eraseDefault bool) Cursor {
 	if pointer == nil {
 		pointer = defaultCursor
 	}
-	cur := Cursor{Cursor: pointer, Position: len(startingInput), Input: []rune(startingInput), erase: eraseDefault}
+	cur := Cursor{Cursor: pointer, Position: len(startinginput), input: []rune(startinginput), erase: eraseDefault}
 	if eraseDefault {
 		cur.Start()
 	} else {
@@ -66,14 +66,14 @@ func NewCursor(startingInput string, pointer Pointer, eraseDefault bool) Cursor 
 
 func (c *Cursor) String() string {
 	return fmt.Sprintf(
-		"Cursor: %s, Input %s, Position %d",
-		string(c.Cursor([]rune(""))), string(c.Input), c.Position)
+		"Cursor: %s, input %s, Position %d",
+		string(c.Cursor([]rune(""))), string(c.input), c.Position)
 }
 
-// End is a convenience for c.Place(len(c.Input)) so you don't have to know how I
+// End is a convenience for c.Place(len(c.input)) so you don't have to know how I
 // indexed.
 func (c *Cursor) End() {
-	c.Place(len(c.Input))
+	c.Place(len(c.input))
 }
 
 // Start is convenience for c.Place(0) so you don't have to know how I
@@ -84,8 +84,8 @@ func (c *Cursor) Start() {
 
 // ensures we are in bounds.
 func (c *Cursor) correctPosition() {
-	if c.Position > len(c.Input) {
-		c.Position = len(c.Input)
+	if c.Position > len(c.input) {
+		c.Position = len(c.input)
 	}
 
 	if c.Position < 0 {
@@ -112,44 +112,42 @@ func format(a []rune, c *Cursor) string {
 	return string(out)
 }
 
-// Format renders the Input with the Cursor appropriately positioned.
+// Format renders the input with the Cursor appropriately positioned.
 func (c *Cursor) Format() string {
-	r := c.Input
+	r := c.input
 	// insert the cursor
 	return format(r, c)
 }
 
-// FormatMask replaces all Input runes with the mask rune.
+// FormatMask replaces all input runes with the mask rune.
 func (c *Cursor) FormatMask(mask rune) string {
-	r := make([]rune, len(c.Input))
+	r := make([]rune, len(c.input))
 	for i := range r {
 		r[i] = mask
 	}
 	return format(r, c)
 }
 
-// Update inserts newInput into the Input []rune in the appropriate place.
+// Update inserts newinput into the input []rune in the appropriate place.
 // The cursor is moved to the end of the inputed sequence.
-func (c *Cursor) Update(newInput string) {
-	a := c.Input
-	b := []rune(newInput)
+func (c *Cursor) Update(newinput string) {
+	a := c.input
+	b := []rune(newinput)
 	i := c.Position
 	a = append(a[:i], append(b, a[i:]...)...)
-	c.Input = a
+	c.input = a
 	c.Move(len(b))
 }
 
 // Get returns a copy of the input
 func (c *Cursor) Get() string {
-	o := make([]rune, len(c.Input))
-	copy(o, c.Input)
-	return string(o)
+	return string(c.input)
 }
 
 // Replace replaces the previous input with whatever is specified, and moves the
 // cursor to the end position
 func (c *Cursor) Replace(input string) {
-	c.Input = []rune(input)
+	c.input = []rune(input)
 	c.End()
 }
 
@@ -171,16 +169,16 @@ func (c *Cursor) Move(shift int) {
 // It handles being at the beginning or end of the row, and moves the cursor to
 // the appropriate position.
 func (c *Cursor) Backspace() {
-	a := c.Input
+	a := c.input
 	i := c.Position
 	if i == 0 {
 		// Shrug
 		return
 	}
 	if i == len(a) {
-		c.Input = a[:i-1]
+		c.input = a[:i-1]
 	} else {
-		c.Input = append(a[:i-1], a[i:]...)
+		c.input = append(a[:i-1], a[i:]...)
 	}
 	// now it's pointing to the i+1th element
 	c.Move(-1)
@@ -213,7 +211,8 @@ func (c *Cursor) Listen(line []rune, pos int, key rune) ([]rune, int, bool) {
 	default:
 		if c.erase {
 			c.erase = false
-			c.Update(string(line))
+			c.Replace("")
+			c.Update(string(key))
 		}
 	}
 

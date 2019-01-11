@@ -228,7 +228,7 @@ func (p *Prompt) Run() (string, error) {
 
 	if p.IsConfirm {
 		lowerDefault := strings.ToLower(p.Default)
-		if strings.ToLower(echo) != "y" && (lowerDefault != "y" || (lowerDefault == "y" && echo != "")) {
+		if strings.ToLower(cur.Get()) != "y" && (lowerDefault != "y" || (lowerDefault == "y" && cur.Get() != "")) {
 			prompt = render(p.Templates.invalid, p.Label)
 			err = ErrAbort
 		}

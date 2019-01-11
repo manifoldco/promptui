@@ -27,7 +27,7 @@ func TestCursor(t *testing.T) {
 	})
 
 	t.Run("Cursor at end, append additional", func(t *testing.T) {
-		cursor := Cursor{Input: []rune("a"), Cursor: pipeCursor}
+		cursor := Cursor{input: []rune("a"), Cursor: pipeCursor}
 		cursor.End()
 		f := cursor.Format()
 		if f != "a|" {
@@ -41,8 +41,8 @@ func TestCursor(t *testing.T) {
 	})
 
 	t.Run("Cursor at at end, backspace", func(t *testing.T) {
-		cursor := Cursor{Input: []rune("default"), Cursor: pipeCursor}
-		cursor.Place(len(cursor.Input))
+		cursor := Cursor{input: []rune("default"), Cursor: pipeCursor}
+		cursor.Place(len(cursor.input))
 		cursor.Backspace()
 
 		if cursor.Format() != "defaul|" {
@@ -56,7 +56,7 @@ func TestCursor(t *testing.T) {
 	})
 
 	t.Run("Cursor at beginning, append additional", func(t *testing.T) {
-		cursor := Cursor{Input: []rune("default"), Cursor: pipeCursor}
+		cursor := Cursor{input: []rune("default"), Cursor: pipeCursor}
 		t.Log("init", cursor.String())
 		cursor.Backspace()
 		if cursor.Format() != "|default" {
@@ -82,7 +82,7 @@ func TestCursor(t *testing.T) {
 	})
 
 	t.Run("Move", func(t *testing.T) {
-		cursor := Cursor{Input: []rune("default"), Cursor: pipeCursor}
+		cursor := Cursor{input: []rune("default"), Cursor: pipeCursor}
 		if cursor.Format() != "|default" {
 			t.Errorf("expected |default; found %s", cursor.Format())
 		}
