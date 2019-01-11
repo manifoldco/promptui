@@ -45,6 +45,9 @@ type Select struct {
 	// https://godoc.org/github.com/chzyer/readline#Config for more information on readline.
 	IsVimMode bool
 
+	// HideHelp sets whether to hide help information.
+	HideHelp bool
+
 	// Templates can be used to customize the select output. If nil is passed, the
 	// default templates are used. See the SelectTemplates docs for more info.
 	Templates *SelectTemplates
@@ -271,7 +274,7 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 		if searchMode {
 			header := fmt.Sprintf("Search: %s", cur.Format())
 			sb.WriteString(header)
-		} else {
+		} else if !s.HideHelp {
 			help := s.renderHelp(canSearch)
 			sb.Write(help)
 		}
@@ -477,6 +480,8 @@ type SelectWithAdd struct {
 
 	// a function that defines how to render the cursor
 	Pointer Pointer
+	// HideHelp sets whether to hide help information.
+	HideHelp bool
 }
 
 // Run executes the select list. Its displays the label and the list of items, asking the user to chose any
@@ -499,6 +504,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			Label:     sa.Label,
 			Items:     newItems,
 			IsVimMode: sa.IsVimMode,
+			HideHelp:  sa.HideHelp,
 			Size:      5,
 			list:      list,
 			Pointer:   sa.Pointer,
