@@ -3,7 +3,7 @@ LINTERS=$(shell grep "// lint" tools.go | awk '{gsub(/\"/, "", $$1); print $$1}'
 	gofmt \
 	vet
 
-ci: $(LINTERS) test
+ci: $(LINTERS) cover
 
 .PHONY: ci
 
