@@ -60,8 +60,18 @@ $(LINTERS): %: vendor/bin/gometalinter %-bin vendor
 	PATH=`pwd`/vendor/bin:$$PATH gometalinter --tests --disable-all --vendor \
 		--deadline=5m -s data --enable $@ ./...
 
-cover: vendor
-	@CGO_ENABLED=0 go test -v -coverprofile=coverage.txt -covermode=atomic $$(go list ./... | grep -v vendor | grep -v generated)
+COVER_TEST_PKGS:=$(shell find . -type f -name '*_test.go' | grep -v vendor | rev | cut -d "/" -f 2- | rev | grep -v generated | sort -u)
+$(COVER_TEST_PKGS:=-cover): %-cover: all-cover.txt
+	@CGO_ENABLED=0 go test -v -coverprofile=$@.out -covermode=atomic ./$*
+	@if [ -f $@.out ]; then \
+		grep -v "mode: atomic" < $@.out >> all-cover.txt; \
+		rm $@.out; \
+	fi
+
+all-cover.txt:
+	echo "mode: atomic" > all-cover.txt
+
+cover: vendor all-cover.txt $(COVER_TEST_PKGS:=-cover)
 
 .PHONY: $(LINTERS) test
 .PHONY: cover all-cover.txt
