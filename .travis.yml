@@ -9,3 +9,9 @@ branches:
   - master
 
 install: make bootstrap
+
+script:
+  - make cover
+after_success:
+  # only report coverage for go-version 1.11
+  - if [[ $TRAVIS_GO_VERSION =~ ^1\.11 ]] ; then bash <(curl -s https://codecov.io/bash); fi

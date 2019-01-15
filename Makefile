@@ -60,5 +60,8 @@ $(LINTERS): %: vendor/bin/gometalinter %-bin vendor
 	PATH=`pwd`/vendor/bin:$$PATH gometalinter --tests --disable-all --vendor \
 		--deadline=5m -s data --enable $@ ./...
 
+cover: vendor
+	@CGO_ENABLED=0 go test -v -coverprofile=coverage.txt -covermode=atomic $$(go list ./... | grep -v vendor | grep -v generated)
+
 .PHONY: $(LINTERS) test
 .PHONY: cover all-cover.txt
