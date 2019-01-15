@@ -10,8 +10,6 @@ import (
 	"github.com/manifoldco/promptui/screenbuf"
 )
 
-const cursor = "\u2588"
-
 // Prompt represents a single line text field input with options for validation and input masks.
 type Prompt struct {
 	// Label is the value displayed on the command line prompt.
@@ -45,6 +43,9 @@ type Prompt struct {
 
 	// IsVimMode enables vi-like movements (hjkl) and editing.
 	IsVimMode bool
+
+	// the Pointer defines how to render the cursor.
+	Pointer Pointer
 
 	stdin  io.ReadCloser
 	stdout io.WriteCloser
@@ -109,49 +110,39 @@ type PromptTemplates struct {
 // Run will keep the prompt alive until it has been canceled from the command prompt or it has received a valid
 // value. It will return the value and an error if any occurred during the prompt's execution.
 func (p *Prompt) Run() (string, error) {
-	c := &readline.Config{}
-	err := c.Init()
-	if err != nil {
-		return "", err
-	}
+	var err error
 
 	err = p.prepareTemplates()
 	if err != nil {
 		return "", err
 	}
 
-	if p.stdin != nil {
-		c.Stdin = p.stdin
+	c := &readline.Config{
+		Stdin:          p.stdin,
+		Stdout:         p.stdout,
+		EnableMask:     p.Mask != 0,
+		MaskRune:       p.Mask,
+		HistoryLimit:   -1,
+		VimMode:        p.IsVimMode,
+		UniqueEditLine: true,
 	}
 
-	if p.stdout != nil {
-		c.Stdout = p.stdout
+	err = c.Init()
+	if err != nil {
+		return "", err
 	}
-
-	if p.Mask != 0 {
-		c.EnableMask = true
-		c.MaskRune = p.Mask
-	}
-
-	if p.IsVimMode {
-		c.VimMode = true
-	}
-
-	c.HistoryLimit = -1
-	c.UniqueEditLine = true
 
 	rl, err := readline.NewEx(c)
 	if err != nil {
 		return "", err
 	}
-
+	// we're taking over the cursor,  so stop showing it.
 	rl.Write([]byte(hideCursor))
 	sb := screenbuf.New(rl)
 
 	validFn := func(x string) error {
 		return nil
 	}
-
 	if p.Validate != nil {
 		validFn = p.Validate
 	}
@@ -162,33 +153,11 @@ func (p *Prompt) Run() (string, error) {
 		input = ""
 	}
 	eraseDefault := input != "" && !p.AllowEdit
+	cur := NewCursor(input, p.Pointer, eraseDefault)
 
-	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
-		if line != nil {
-			input += string(line)
-		}
-
-		switch key {
-		case 0: // empty
-		case KeyEnter:
-			return nil, 0, false
-		case KeyBackspace:
-			if eraseDefault {
-				eraseDefault = false
-				input = ""
-			}
-			if len(input) > 0 {
-				r := []rune(input)
-				input = string(r[:len(r)-1])
-			}
-		default:
-			if eraseDefault {
-				eraseDefault = false
-				input = string(line)
-			}
-		}
-
-		err := validFn(input)
+	listen := func(input []rune, pos int, key rune) ([]rune, int, bool) {
+		_, _, keepOn := cur.Listen(input, pos, key)
+		err := validFn(cur.Get())
 		var prompt []byte
 
 		if err != nil {
@@ -200,47 +169,44 @@ func (p *Prompt) Run() (string, error) {
 			}
 		}
 
-		echo := input
+		echo := cur.Format()
 		if p.Mask != 0 {
-			echo = strings.Repeat(string(p.Mask), len(echo))
+			echo = cur.FormatMask(p.Mask)
 		}
 
-		prompt = append(prompt, []byte(echo+cursor)...)
-
+		prompt = append(prompt, []byte(echo)...)
 		sb.Reset()
 		sb.Write(prompt)
-
 		if inputErr != nil {
 			validation := render(p.Templates.validation, inputErr)
 			sb.Write(validation)
 			inputErr = nil
 		}
-
 		sb.Flush()
+		return nil, 0, keepOn
+	}
 
-		return nil, 0, true
-	})
+	c.SetListener(listen)
 
 	for {
-		_, err = rl.Readline()
-
-		inputErr = validFn(input)
+		_, err := rl.Readline()
+		inputErr = validFn(cur.Get())
 		if inputErr == nil {
 			break
 		}
 
 		if err != nil {
-			switch err {
-			case readline.ErrInterrupt:
-				err = ErrInterrupt
-			case io.EOF:
-				err = ErrEOF
-			}
 			break
 		}
 	}
 
 	if err != nil {
+		switch err {
+		case readline.ErrInterrupt:
+			err = ErrInterrupt
+		case io.EOF:
+			err = ErrEOF
+		}
 		if err.Error() == "Interrupt" {
 			err = ErrInterrupt
 		}
@@ -252,9 +218,9 @@ func (p *Prompt) Run() (string, error) {
 		return "", err
 	}
 
-	echo := input
+	echo := cur.Format()
 	if p.Mask != 0 {
-		echo = strings.Repeat(string(p.Mask), len(echo))
+		echo = cur.FormatMask(p.Mask)
 	}
 
 	prompt := render(p.Templates.success, p.Label)
@@ -262,7 +228,7 @@ func (p *Prompt) Run() (string, error) {
 
 	if p.IsConfirm {
 		lowerDefault := strings.ToLower(p.Default)
-		if strings.ToLower(echo) != "y" && (lowerDefault != "y" || (lowerDefault == "y" && echo != "")) {
+		if strings.ToLower(cur.Get()) != "y" && (lowerDefault != "y" || (lowerDefault == "y" && cur.Get() != "")) {
 			prompt = render(p.Templates.invalid, p.Label)
 			err = ErrAbort
 		}
@@ -274,7 +240,7 @@ func (p *Prompt) Run() (string, error) {
 	rl.Write([]byte(showCursor))
 	rl.Close()
 
-	return input, err
+	return cur.Get(), err
 }
 
 func (p *Prompt) prepareTemplates() error {
