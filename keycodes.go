@@ -4,7 +4,7 @@ package promptui
 
 import "github.com/chzyer/readline"
 
-// These runes are used to identity the commands entered by the user in the command prompt. They map
+// These runes are used to identify the commands entered by the user in the command prompt. They map
 // to specific actions of promptui in prompt mode and can be remapped if necessary.
 var (
 	// KeyEnter is the default key for submission/selection.
