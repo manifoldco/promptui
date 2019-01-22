@@ -173,11 +173,21 @@ type SelectTemplates struct {
 	help     *template.Template
 }
 
-// Run executes the select list. Its displays the label and the list of items, asking the user to chose any
+// Run executes the select list. It displays the label and the list of items, asking the user to chose any
 // value within to list. Run will keep the prompt alive until it has been canceled from
 // the command prompt or it has received a valid value. It will return the value and an error if any
 // occurred during the select's execution.
 func (s *Select) Run() (int, string, error) {
+	return s.RunCursorAt(0, 0)
+}
+
+// RunCursorAt executes the select list, initializing the cursor to the given
+// position. Invalid cursor positions will be clamped to valid values.  It
+// displays the label and the list of items, asking the user to chose any value
+// within to list. Run will keep the prompt alive until it has been canceled
+// from the command prompt or it has received a valid value. It will return
+// the value and an error if any occurred during the select's execution.
+func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 	if s.Size == 0 {
 		s.Size = 5
 	}
@@ -196,10 +206,10 @@ func (s *Select) Run() (int, string, error) {
 	if err != nil {
 		return 0, "", err
 	}
-	return s.innerRun(0, ' ')
+	return s.innerRun(cursorPos, scroll, ' ')
 }
 
-func (s *Select) innerRun(starting int, top rune) (int, string, error) {
+func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) {
 	stdin := readline.NewCancelableStdin(os.Stdin)
 	c := &readline.Config{}
 	err := c.Init()
@@ -228,6 +238,8 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 
 	canSearch := s.Searcher != nil
 	searchMode := s.StartInSearchMode
+	s.list.SetCursor(cursorPos)
+	s.list.SetStart(scroll)
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
 		switch {
@@ -375,6 +387,11 @@ func (s *Select) innerRun(starting int, top rune) (int, string, error) {
 	return s.list.Index(), fmt.Sprintf("%v", item), err
 }
 
+// ScrollPosition returns the current scroll position.
+func (s *Select) ScrollPosition() int {
+	return s.list.Start()
+}
+
 func (s *Select) prepareTemplates() error {
 	tpls := s.Templates
 	if tpls == nil {
@@ -516,7 +533,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			return 0, "", err
 		}
 
-		selected, value, err := s.innerRun(1, '+')
+		selected, value, err := s.innerRun(1, 0, '+')
 		if err != nil || selected != 0 {
 			return selected - 1, value, err
 		}
