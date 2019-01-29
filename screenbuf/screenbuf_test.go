@@ -22,6 +22,7 @@ func TestScreen(t *testing.T) {
 		height   int
 		flush    bool
 		reset    bool
+		clear    bool
 	}{
 		{
 			scenario: "initial write",
@@ -80,6 +81,14 @@ func TestScreen(t *testing.T) {
 			height:   2,
 			reset:    true,
 		},
+		{
+			scenario: "clear all previous lines",
+			lines:    []string{"line one", "line two"},
+			expect:   "\\u\\u\\cline one\\d\\cline two\\d\\u\\c\\u\\c",
+			cursor:   0,
+			height:   0,
+			clear:    true,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -93,6 +102,12 @@ func TestScreen(t *testing.T) {
 				_, err := s.WriteString(line)
 				if err != nil {
 					t.Fatalf("expected no error, got %v", err)
+				}
+			}
+
+			if tc.clear {
+				if err := s.Clear(); err != nil {
+					t.Errorf("expected no error, got %d", err)
 				}
 			}
 
