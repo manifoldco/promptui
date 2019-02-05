@@ -30,7 +30,7 @@ type Select struct {
 
 	// Items are the items to display inside the list. It expect a slice of any kind of values, including strings.
 	//
-	// If using a slice a strings, promptui will use those strings directly into its base templates or the
+	// If using a slice of strings, promptui will use those strings directly into its base templates or the
 	// provided templates. If using any other type in the slice, it will attempt to transform it into a string
 	// before giving it to its templates. Custom templates will override this behavior if using the dot notation
 	// inside the templates.
