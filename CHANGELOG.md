@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support Go modules
 
+### Fixed
+
+- Fix typos in PromptTemplates documentation
+
 ## [0.3.1] - 2018-07-26
 
 ### Added
