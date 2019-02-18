@@ -1,7 +1,10 @@
 package promptui
 
 import (
+	"bytes"
 	"testing"
+
+	"github.com/manifoldco/promptui/screenbuf"
 )
 
 func TestSelectTemplateRender(t *testing.T) {
@@ -147,4 +150,19 @@ Description: {{.Description}}`,
 			t.Errorf("Expected label to eq %q, got %q", exp, result)
 		}
 	})
+}
+
+func TestClearScreen(t *testing.T) {
+	var buf bytes.Buffer
+	sb := screenbuf.New(&buf)
+
+	sb.WriteString("test")
+	clearScreen(sb)
+
+	got := buf.String()
+	except := "\x1b[1A\x1b[2K\r"
+
+	if except != got {
+		t.Errorf("expected %q, got %q", except, got)
+	}
 }

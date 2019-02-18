@@ -380,9 +380,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	item := items[idx]
 
 	if s.HideSelected {
-		sb.Reset()
-		sb.Clear()
-		sb.Flush()
+		clearScreen(sb)
 	} else {
 		sb.Reset()
 		sb.Write(render(s.Templates.selected, item))
@@ -621,4 +619,10 @@ func render(tpl *template.Template, data interface{}) []byte {
 		return []byte(fmt.Sprintf("%v", data))
 	}
 	return buf.Bytes()
+}
+
+func clearScreen(sb *screenbuf.ScreenBuf) {
+	sb.Reset()
+	sb.Clear()
+	sb.Flush()
 }
