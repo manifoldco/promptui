@@ -48,6 +48,9 @@ type Select struct {
 	// HideHelp sets whether to hide help information.
 	HideHelp bool
 
+	// HideSelected sets whether to hide the text displayed after an item is successfully selected.
+	HideSelected bool
+
 	// Templates can be used to customize the select output. If nil is passed, the
 	// default templates are used. See the SelectTemplates docs for more info.
 	Templates *SelectTemplates
@@ -376,11 +379,14 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	items, idx := s.list.Items()
 	item := items[idx]
 
-	output := render(s.Templates.selected, item)
+	if s.HideSelected {
+		clearScreen(sb)
+	} else {
+		sb.Reset()
+		sb.Write(render(s.Templates.selected, item))
+		sb.Flush()
+	}
 
-	sb.Reset()
-	sb.Write(output)
-	sb.Flush()
 	rl.Write([]byte(showCursor))
 	rl.Close()
 
@@ -613,4 +619,10 @@ func render(tpl *template.Template, data interface{}) []byte {
 		return []byte(fmt.Sprintf("%v", data))
 	}
 	return buf.Bytes()
+}
+
+func clearScreen(sb *screenbuf.ScreenBuf) {
+	sb.Reset()
+	sb.Clear()
+	sb.Flush()
 }

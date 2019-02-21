@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.4.0] - 2019-02-19
+
+### Added
+
+- The text displayed when an item was successfully selected can be hidden
+
 ## [0.3.2] - 2018-11-26
 
 ### Added
