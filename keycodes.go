@@ -10,6 +10,9 @@ var (
 	// KeyEnter is the default key for submission/selection.
 	KeyEnter rune = readline.CharEnter
 
+	// KeySpace is the default key to chose options for checkbox
+	KeySpace rune = 32
+
 	// KeyBackspace is the default key for deleting input text.
 	KeyBackspace rune = readline.CharBackspace
 

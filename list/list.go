@@ -235,3 +235,8 @@ func (l *List) Items() ([]interface{}, int) {
 
 	return result, active
 }
+
+// GetCursor returns current cursor position
+func (l *List) GetCursor() int {
+	return l.cursor
+}
