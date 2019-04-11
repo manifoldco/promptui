@@ -189,7 +189,7 @@ func (p *Prompt) Run() (string, error) {
 	c.SetListener(listen)
 
 	for {
-		_, err := rl.Readline()
+		_, err = rl.Readline()
 		inputErr = validFn(cur.Get())
 		if inputErr == nil {
 			break
