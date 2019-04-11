@@ -2,7 +2,7 @@ required=[
   "honnef.co/go/tools/cmd/gosimple",
   "github.com/alecthomas/gometalinter",
   "github.com/client9/misspell/cmd/misspell",
-  "github.com/golang/lint/golint",
+  "golang.org/x/lint/golint",
   "github.com/gordonklaus/ineffassign",
   "github.com/tsenart/deadcode",
 ]
@@ -14,3 +14,7 @@ required=[
 [[constraint]]
   name = "github.com/juju/ansiterm"
   branch = "master"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/lint"
