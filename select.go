@@ -70,6 +70,10 @@ type Select struct {
 	// For search mode to work, the Search property must be implemented.
 	StartInSearchMode bool
 
+	// EnterAlwaysReturns sets whether or not pressing enter will always cause the search prompt to return index
+	// NotFound, current user input and error ErrNotFound when no item is selected.
+	EnterAlwaysReturns bool
+
 	label string
 
 	list *list.List
@@ -360,8 +364,12 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		_, idx := s.list.Items()
 		if idx != list.NotFound {
 			break
+		} else if s.EnterAlwaysReturns {
+			clearScreen(sb)
+			rl.Write([]byte(showCursor))
+			rl.Close()
+			return list.NotFound, cur.Get(), ErrNotFound
 		}
-
 	}
 
 	if err != nil {

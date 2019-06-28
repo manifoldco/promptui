@@ -22,6 +22,10 @@ var ErrInterrupt = errors.New("^C")
 // ErrAbort is the error returned when confirm prompts are supplied "n"
 var ErrAbort = errors.New("")
 
+// ErrNotFound is the error returned from prompts when enter is pressed, EnterAlwaysReturns is true and no item
+// is selected
+var ErrNotFound = errors.New("-1")
+
 // ValidateFunc is a placeholder type for any validation functions that validates a given input. It should return
 // a ValidationError if the input is not valid.
 type ValidateFunc func(string) error
