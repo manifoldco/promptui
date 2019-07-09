@@ -66,7 +66,7 @@ type Select struct {
 	// it is implemented.
 	Searcher list.Searcher
 
-	// StartInSearchMode sets whether or not the select mdoe should start in search mode or selection mode.
+	// StartInSearchMode sets whether or not the select mode should start in search mode or selection mode.
 	// For search mode to work, the Search property must be implemented.
 	StartInSearchMode bool
 
@@ -175,6 +175,9 @@ type SelectTemplates struct {
 	details  *template.Template
 	help     *template.Template
 }
+
+// SearchPrompt is the prompt displayed in search mode.
+var SearchPrompt = "Search: "
 
 // Run executes the select list. It displays the label and the list of items, asking the user to chose any
 // value within to list. Run will keep the prompt alive until it has been canceled from
@@ -287,7 +290,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		}
 
 		if searchMode {
-			header := fmt.Sprintf("Search: %s", cur.Format())
+			header := SearchPrompt + cur.Format()
 			sb.WriteString(header)
 		} else if !s.HideHelp {
 			help := s.renderHelp(canSearch)
