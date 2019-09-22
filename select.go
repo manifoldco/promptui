@@ -219,15 +219,16 @@ func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 }
 
 func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) {
-	stdin := readline.NewCancelableStdin(s.Stdin)
-	c := &readline.Config{}
+	c := &readline.Config{
+		Stdin: s.Stdin,
+		Stdout: s.Stdout,
+	}
 	err := c.Init()
 	if err != nil {
 		return 0, "", err
 	}
 
-	c.Stdin = stdin
-	c.Stdout = s.Stdout
+	c.Stdin = readline.NewCancelableStdin(c.Stdin)
 
 	if s.IsVimMode {
 		c.VimMode = true
