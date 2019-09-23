@@ -220,7 +220,7 @@ func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 
 func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) {
 	c := &readline.Config{
-		Stdin: s.Stdin,
+		Stdin:  s.Stdin,
 		Stdout: s.Stdout,
 	}
 	err := c.Init()
