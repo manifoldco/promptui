@@ -1,12 +1,17 @@
+dist: bionic
 language: go
+
 go:
-  - 1.9.x
-  - 1.10.x
-  - 1.11.x
+  - "1.13"
 
 branches:
   only:
-  - master
+    - master
+
+env:
+  global:
+    - GO111MODULE=on
+    - GOPROXY=https://goproxy.io
 
 install: make bootstrap
 
