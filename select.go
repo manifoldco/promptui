@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"text/template"
 
 	"github.com/chzyer/readline"
@@ -486,29 +487,75 @@ func (s *Select) prepareTemplates() error {
 type SelectWithAdd struct {
 	// Label is the text displayed on top of the list to direct input. The IconInitial value "?" will be
 	// appended automatically to the label so it does not need to be added.
-	Label string
+	//
+	// The value for Label can be a simple string or a struct that will need to be accessed by dot notation
+	// inside the templates. For example, `{{ .Name }}` will display the name property of a struct.
+	Label interface{}
 
-	// Items are the items to display inside the list. Each item will be listed individually with the
-	// AddLabel as the first item of the list.
-	Items []string
+	// Items are the items to display inside the list. It expect a slice of any kind of values, including strings.
+	//
+	// If using a slice of strings, promptui will use those strings directly into its base templates or the
+	// provided templates. If using any other type in the slice, it will attempt to transform it into a string
+	// before giving it to its templates. Custom templates will override this behavior if using the dot notation
+	// inside the templates.
+	//
+	// For example, `{{ .Name }}` will display the name property of a struct.
+	Items interface{}
 
-	// AddLabel is the label used for the first item of the list that enables adding a new item.
+	// AddSelectLabel is the label used for the first item of the list that enables adding a new item.
 	// Selecting this item in the list displays the add item prompt using promptui/prompt.
-	AddLabel string
+	// AddLabel must use the same type as Items.
+	AddSelectLabel interface{}
 
-	// Validate is an optional function that fill be used against the entered value in the prompt to validate it.
-	// If the value is valid, it is returned to the callee to be added in the list.
-	Validate ValidateFunc
+	// AddPromptLabel is the prompt label once the Add option is selected.
+	// Defaults to the AddSelectLabel if not set.
+	AddPromptLabel interface{}
+
+	// Templates can be used to customize the prompt output. If nil is passed, the
+	// default templates are used. See the PromptTemplates docs for more info.
+	AddPromptTemplate *PromptTemplates
+
+	// AddOnBottom puts the Add option on the bottom of the list.
+	AddOnBottom bool
+
+	// Size is the number of items that should appear on the select before scrolling is necessary. Defaults to 5.
+	Size int
 
 	// IsVimMode sets whether to use vim mode when using readline in the command prompt. Look at
 	// https://godoc.org/github.com/chzyer/readline#Config for more information on readline.
 	IsVimMode bool
 
-	// a function that defines how to render the cursor
-	Pointer Pointer
-
 	// HideHelp sets whether to hide help information.
 	HideHelp bool
+
+	// HideSelected sets whether to hide the text displayed after an item is successfully selected.
+	HideSelected bool
+
+	// Templates can be used to customize the select output. If nil is passed, the
+	// default templates are used. See the SelectTemplates docs for more info.
+	Templates *SelectTemplates
+
+	// Keys is the set of keys used in select mode to control the command line interface. See the SelectKeys docs for
+	// more info.
+	Keys *SelectKeys
+
+	// Searcher is a function that can be implemented to refine the base searching algorithm in selects.
+	//
+	// Search is a function that will receive the searched term and the item's index and should return a boolean
+	// for whether or not the terms are alike. It is unimplemented by default and search will not work unless
+	// it is implemented.
+	Searcher list.Searcher
+
+	// StartInSearchMode sets whether or not the select mode should start in search mode or selection mode.
+	// For search mode to work, the Search property must be implemented.
+	StartInSearchMode bool
+
+	// Validate is an optional function that fill be used against the entered value in the prompt to validate it.
+	// If the value is valid, it is returned to the callee to be added in the list.
+	Validate ValidateFunc
+
+	// a function that defines how to render the cursor
+	Pointer Pointer
 }
 
 // Run executes the select list. Its displays the label and the list of items, asking the user to chose any
@@ -519,41 +566,53 @@ type SelectWithAdd struct {
 // Otherwise, it will return the index and the value of the selected item. In any case, if an error is triggered, it
 // will also return the error as its third return value.
 func (sa *SelectWithAdd) Run() (int, string, error) {
-	if len(sa.Items) > 0 {
-		newItems := append([]string{sa.AddLabel}, sa.Items...)
+	if sa.Items == nil || reflect.TypeOf(sa.Items).Kind() != reflect.Slice {
+		return 0, "", fmt.Errorf("items %v is not a slice", sa.Items)
+	}
+	it := reflect.ValueOf(sa.Items)
+	items := make([]interface{}, it.Len()+1)
+	var offset int
+	if sa.AddOnBottom {
+		items[len(items)-1] = sa.AddSelectLabel
+		offset = 0
+	} else {
+		items[0] = sa.AddSelectLabel
+		offset = 1
+	}
+	for i := 0; i < it.Len(); i++ {
+		items[i+offset] = it.Index(i).Interface()
+	}
 
-		list, err := list.New(newItems, 5)
-		if err != nil {
-			return 0, "", err
-		}
-
+	if it.Len() > 0 {
 		s := Select{
-			Label:     sa.Label,
-			Items:     newItems,
-			IsVimMode: sa.IsVimMode,
-			HideHelp:  sa.HideHelp,
-			Size:      5,
-			list:      list,
-			Pointer:   sa.Pointer,
-		}
-		s.setKeys()
-
-		err = s.prepareTemplates()
-		if err != nil {
-			return 0, "", err
+			Label:             sa.Label,
+			Items:             items,
+			IsVimMode:         sa.IsVimMode,
+			HideHelp:          sa.HideHelp,
+			Size:              sa.Size,
+			HideSelected:      sa.HideSelected,
+			Templates:         sa.Templates,
+			Keys:              sa.Keys,
+			Searcher:          sa.Searcher,
+			StartInSearchMode: sa.StartInSearchMode,
+			Pointer:           sa.Pointer,
 		}
 
-		selected, value, err := s.innerRun(1, 0, '+')
-		if err != nil || selected != 0 {
-			return selected - 1, value, err
+		selected, value, err := s.RunCursorAt(offset, 0)
+		// check if selected the Add option.
+		if err != nil || selected != 0 && !sa.AddOnBottom || selected != len(items) && sa.AddOnBottom {
+			return selected - offset, value, err
 		}
 
 		// XXX run through terminal for windows
 		os.Stdout.Write([]byte(upLine(1) + "\r" + clearLine))
 	}
-
+	if sa.AddPromptLabel == nil {
+		sa.AddPromptLabel = sa.AddSelectLabel
+	}
 	p := Prompt{
-		Label:     sa.AddLabel,
+		Label:     sa.AddPromptLabel,
+		Templates: sa.AddPromptTemplate,
 		Validate:  sa.Validate,
 		IsVimMode: sa.IsVimMode,
 		Pointer:   sa.Pointer,

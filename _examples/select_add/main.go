@@ -14,9 +14,9 @@ func main() {
 
 	for index < 0 {
 		prompt := promptui.SelectWithAdd{
-			Label:    "What's your text editor",
-			Items:    items,
-			AddLabel: "Other",
+			Label:          "What's your text editor",
+			Items:          items,
+			AddSelectLabel: "Other",
 		}
 
 		index, result, err = prompt.Run()
