@@ -1,6 +1,6 @@
 required=[
   "honnef.co/go/tools/cmd/gosimple",
-  "github.com/alecthomas/gometalinter",
+  "github.com/golangci/golangci-lint",
   "github.com/client9/misspell/cmd/misspell",
   "golang.org/x/lint/golint",
   "github.com/gordonklaus/ineffassign",

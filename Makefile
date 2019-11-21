@@ -56,8 +56,8 @@ mod-tidy:
 test: vendor
 	CGO_ENABLED=0 go test $$(go list ./... | grep -v generated)
 
-$(LINTERS): %: vendor/bin/gometalinter %-bin vendor
-	PATH=`pwd`/vendor/bin:$$PATH gometalinter --tests --disable-all --vendor \
+$(LINTERS): %: vendor/bin/golangci-lint %-bin vendor
+	PATH=`pwd`/vendor/bin:$$PATH GOFLAGS=-mod=vendor golangci-lint run --tests --disable-all \
 		--deadline=5m -s data --enable $@ ./...
 
 COVER_TEST_PKGS:=$(shell find . -type f -name '*_test.go' | grep -v vendor | rev | cut -d "/" -f 2- | rev | grep -v generated | sort -u)
