@@ -1,10 +1,14 @@
+dist: bionic
 language: go
+
 go:
-  - 1.11.x
+  - "1.11.x"
+  - "1.12.x"
+  - "1.13.x"
 
 branches:
   only:
-  - master
+    - master
 
 after_success:
   # only report coverage for go-version 1.11
