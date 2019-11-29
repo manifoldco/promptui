@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.6.0] - 2019-11-29
+
+### Added
+
+- Support configurable stdin
+
 ### Fixed
 
 - Correct the dep on go-i18n
