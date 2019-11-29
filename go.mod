@@ -1,7 +1,11 @@
 module github.com/manifoldco/promptui
 
+go 1.11
+
 require (
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/alecthomas/gometalinter v3.0.0+incompatible
+	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/chzyer/logex v1.1.10 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
@@ -14,18 +18,17 @@ require (
 	github.com/lunixbochs/vtclean v0.0.0-20180621232353-2d01aacdc34a // indirect
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/stretchr/testify v1.2.2 // indirect
+	github.com/nicksnyder/go-i18n v0.0.0-00010101000000-000000000000 // indirect
 	github.com/tsenart/deadcode v0.0.0-20160724212837-210d2dc333e9
 	golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3
 	golang.org/x/sys v0.0.0-20181122145206-62eef0e2fa9b // indirect
 	golang.org/x/tools v0.0.0-20181122213734-04b5d21e00f1 // indirect
+
+	// Do not change this version of kingpin; we will remove it when we stop using gometalinter
+	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20171010053543-63abe20a23e2 // indirect
+
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
 
-// This version of kingpin is incompatible with the released version of
-// gometalinter until the next release of gometalinter, and possibly until it
-// has go module support, we'll need this exclude, and perhaps some more.
-//
-// After that point, we should be able to remove it.
-exclude gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c
+// Remove this when we stop using gometalinter and kingpin
+replace github.com/nicksnyder/go-i18n => github.com/nicksnyder/go-i18n v1.10.1
