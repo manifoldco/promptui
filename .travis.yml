@@ -2,8 +2,6 @@ dist: bionic
 language: go
 
 go:
-  - "1.9.x"
-  - "1.10.x"
   - "1.11.x"
   - "1.12.x"
   - "1.13.x"
@@ -11,13 +9,6 @@ go:
 branches:
   only:
     - master
-
-env:
-  global:
-    - GO111MODULE=on
-    - GOPROXY=https://proxy.golang.org,direct
-
-install: make bootstrap
 
 after_success:
   # only report coverage for go-version 1.11
