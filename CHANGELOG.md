@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.5.0] - 2019-11-29
+
 ### Added
 
 - Now building and testing on go 1.11, go 1.12, and go 1.13
