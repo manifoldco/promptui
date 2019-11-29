@@ -1,4 +1,3 @@
-HAS_GO_MOD=$(shell go help mod; echo $$?)
 LINTERS=$(shell grep "// lint" tools.go | awk '{gsub(/\"/, "", $$1); print $$1}' | awk -F / '{print $$NF}') \
 	gofmt \
 	vet
@@ -25,23 +24,12 @@ $(foreach cmd_pkg,$(CMD_PKGS),$(eval $(call VENDOR_BIN_TMPL,$(cmd_pkg))))
 $(patsubst %,%-bin,$(filter-out gofmt vet,$(LINTERS))): %-bin: vendor/bin/%
 gofmt-bin vet-bin:
 
-ifeq ($(HAS_GO_MOD),0)
-bootstrap:
-
 vendor: go.sum
 	GO111MODULE=on go mod vendor
-else
-bootstrap:
-	which dep || go get -u github.com/golang/dep/cmd/dep
-
-vendor: Gopkg.lock
-	dep ensure -vendor-only
-endif
 
 mod-update:
 	GO111MODULE=on go get -u -m
 	GO111MODULE=on go mod tidy
-	dep ensure -update
 
 mod-tidy:
 	GO111MODULE=on go mod tidy
