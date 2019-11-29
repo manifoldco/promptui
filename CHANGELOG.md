@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Fixed
+
+- Correct the dep on go-i18n
+
 ## [0.5.0] - 2019-11-29
 
 ### Added
