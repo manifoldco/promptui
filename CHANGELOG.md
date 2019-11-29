@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Added
+
+- Now building and testing on go 1.11, go 1.12, and go 1.13
+
 ### Removed
 
 - Removed support for Go versions that don't include modules.
