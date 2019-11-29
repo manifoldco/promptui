@@ -76,6 +76,9 @@ type Select struct {
 
 	// A function that determines how to render the cursor
 	Pointer Pointer
+
+	Stdin  io.ReadCloser
+	Stdout io.WriteCloser
 }
 
 // SelectKeys defines the available keys used by select mode to enable the user to move around the list
@@ -216,14 +219,16 @@ func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 }
 
 func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) {
-	stdin := readline.NewCancelableStdin(os.Stdin)
-	c := &readline.Config{}
+	c := &readline.Config{
+		Stdin:  s.Stdin,
+		Stdout: s.Stdout,
+	}
 	err := c.Init()
 	if err != nil {
 		return 0, "", err
 	}
 
-	c.Stdin = stdin
+	c.Stdin = readline.NewCancelableStdin(c.Stdin)
 
 	if s.IsVimMode {
 		c.VimMode = true
