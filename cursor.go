@@ -7,7 +7,7 @@ import "fmt"
 type Pointer func(to []rune) []rune
 
 func defaultCursor(ignored []rune) []rune {
-	return []rune("\u2590")
+	return []rune("\u2588")
 }
 
 func blockCursor(input []rune) []rune {
