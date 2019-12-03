@@ -1,4 +1,4 @@
-module github.com/manifoldco/promptui
+module github.com/tigergraph/promptui
 
 require (
 	github.com/alecthomas/gometalinter v2.0.11+incompatible
