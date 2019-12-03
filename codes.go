@@ -57,6 +57,8 @@ var ResetCode = fmt.Sprintf("%s%dm", esc, reset)
 const (
 	hideCursor = esc + "?25l"
 	showCursor = esc + "?25h"
+	noLineWrap = esc + "\x1b[?7l"
+	doLineWrap = esc + "\x1b[?7h"
 	clearLine  = esc + "2K"
 )
 

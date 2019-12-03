@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+
+	"github.com/chzyer/readline"
 )
 
 const esc = "\033["
@@ -70,7 +72,6 @@ func (s *ScreenBuf) Write(b []byte) (int, error) {
 			return 0, err
 		}
 	}
-
 	switch {
 	case s.cursor == s.height:
 		n, err := s.buf.Write(clearLine)
@@ -143,4 +144,49 @@ func (s *ScreenBuf) Flush() error {
 // Check ScreenBuf.Write() for a detailed explanation of the function behaviour.
 func (s *ScreenBuf) WriteString(str string) (int, error) {
 	return s.Write([]byte(str))
+}
+
+// hack method that fix the bug of duplicate lines when user input
+// is longer than screen width
+
+// idea: the original code uses cursor to point current terminal line cursor,
+//       however the cursor is not accurate after "Moveup" or "Movedown".
+//       Here, since the linewrap will cause the actual line count > s.height,
+//       we need someway to recalc the height to make sure the output height is correct
+//       Then, by using s.Clear() func, which automatically clears all the lines and move cursor
+//       to the original position, we could simply output our content then in FlushLineWrap().
+func (s *ScreenBuf) WriteLineWrap(b []byte, outputLen int) (int, error) {
+	if bytes.ContainsAny(b, "\r\n") {
+		return 0, fmt.Errorf("%q should not contain either \\r or \\n", b)
+	}
+
+	//reset will delete all previous lines and move cursor to the top
+
+	if s.reset {
+		if err := s.Clear(); err != nil {
+			return 0, err
+		}
+	}
+
+	s.height += outputLen / readline.GetScreenWidth()
+	if outputLen%readline.GetScreenWidth() != 0 {
+		s.height++
+	}
+
+	line := append(b, []byte("\n")...)
+	n, err := s.buf.Write(line)
+	if err != nil {
+		return n, err
+	}
+	return n, nil
+}
+func (s *ScreenBuf) FlushLineWrap() error {
+	//s.clearPreviousLines()
+	_, err := s.buf.WriteTo(s.w)
+	if err != nil {
+		return err
+	}
+
+	s.buf.Reset()
+	return nil
 }

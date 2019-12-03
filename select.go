@@ -9,8 +9,9 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/juju/ansiterm"
-	"github.com/manifoldco/promptui/list"
-	"github.com/manifoldco/promptui/screenbuf"
+
+	"tigergraph.com/thirdparty/promptui/list"
+	"tigergraph.com/thirdparty/promptui/screenbuf"
 )
 
 // SelectedAdd is used internally inside SelectWithAdd when the add option is selected in select mode.
@@ -66,7 +67,7 @@ type Select struct {
 	// it is implemented.
 	Searcher list.Searcher
 
-	// StartInSearchMode sets whether or not the select mode should start in search mode or selection mode.
+	// StartInSearchMode sets whether or not the select mdoe should start in search mode or selection mode.
 	// For search mode to work, the Search property must be implemented.
 	StartInSearchMode bool
 
@@ -76,9 +77,6 @@ type Select struct {
 
 	// A function that determines how to render the cursor
 	Pointer Pointer
-
-	Stdin  io.ReadCloser
-	Stdout io.WriteCloser
 }
 
 // SelectKeys defines the available keys used by select mode to enable the user to move around the list
@@ -179,9 +177,6 @@ type SelectTemplates struct {
 	help     *template.Template
 }
 
-// SearchPrompt is the prompt displayed in search mode.
-var SearchPrompt = "Search: "
-
 // Run executes the select list. It displays the label and the list of items, asking the user to chose any
 // value within to list. Run will keep the prompt alive until it has been canceled from
 // the command prompt or it has received a valid value. It will return the value and an error if any
@@ -219,16 +214,14 @@ func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 }
 
 func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) {
-	c := &readline.Config{
-		Stdin:  s.Stdin,
-		Stdout: s.Stdout,
-	}
+	stdin := readline.NewCancelableStdin(os.Stdin)
+	c := &readline.Config{}
 	err := c.Init()
 	if err != nil {
 		return 0, "", err
 	}
 
-	c.Stdin = readline.NewCancelableStdin(c.Stdin)
+	c.Stdin = stdin
 
 	if s.IsVimMode {
 		c.VimMode = true
@@ -243,6 +236,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	}
 
 	rl.Write([]byte(hideCursor))
+	rl.Write([]byte(noLineWrap))
 	sb := screenbuf.New(rl)
 
 	cur := NewCursor("", s.Pointer, false)
@@ -295,7 +289,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		}
 
 		if searchMode {
-			header := SearchPrompt + cur.Format()
+			header := fmt.Sprintf("Search: %s", cur.Format())
 			sb.WriteString(header)
 		} else if !s.HideHelp {
 			help := s.renderHelp(canSearch)
@@ -376,6 +370,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		if err.Error() == "Interrupt" {
 			err = ErrInterrupt
 		}
+		clearScreen(sb)
 		sb.Reset()
 		sb.WriteString("")
 		sb.Flush()
