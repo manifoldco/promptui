@@ -15,7 +15,8 @@ func blockCursor(input []rune) []rune {
 }
 
 func pipeCursor(input []rune) []rune {
-	marker := []rune("|")
+	// change from "|" to be right half block(U+2590) to make it more explicit
+	marker := []rune("\u2590")
 	out := []rune{}
 	out = append(out, marker...)
 	out = append(out, input...)
@@ -128,6 +129,15 @@ func (c *Cursor) FormatMask(mask rune) string {
 	return format(r, c)
 }
 
+// FormatMaskNoCursor replaces all input runes with the mask rune.
+func (c *Cursor) FormatMaskNoCursor(mask rune) string {
+	r := make([]rune, len(c.input))
+	for i := range r {
+		r[i] = mask
+	}
+	return string(r)
+}
+
 // Update inserts newinput into the input []rune in the appropriate place.
 // The cursor is moved to the end of the inputed sequence.
 func (c *Cursor) Update(newinput string) {
@@ -194,6 +204,7 @@ func (c *Cursor) Listen(line []rune, pos int, key rune) ([]rune, int, bool) {
 	switch key {
 	case 0: // empty
 	case KeyEnter:
+		// keyEnter means this session ends, we should return false and let outside to check user input
 		return []rune(c.Get()), c.Position, false
 	case KeyBackspace:
 		if c.erase {

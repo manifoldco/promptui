@@ -7,8 +7,11 @@ import (
 	"text/template"
 
 	"github.com/chzyer/readline"
-	"github.com/manifoldco/promptui/screenbuf"
+	"github.com/tigergraph/promptui/screenbuf"
 )
+
+const default_prompt_placehold_size = 4
+const default_error_prompt_size = 3
 
 // Prompt represents a single line text field input with options for validation and input masks.
 type Prompt struct {
@@ -111,7 +114,12 @@ type PromptTemplates struct {
 // value. It will return the value and an error if any occurred during the prompt's execution.
 func (p *Prompt) Run() (string, error) {
 	var err error
-
+	//label should be only string
+	labelStr, ok := p.Label.(string)
+	if !ok {
+		return "", ErrAbort
+	}
+	promptLen := default_prompt_placehold_size + len(labelStr)
 	err = p.prepareTemplates()
 	if err != nil {
 		return "", err
@@ -138,6 +146,7 @@ func (p *Prompt) Run() (string, error) {
 	}
 	// we're taking over the cursor,  so stop showing it.
 	rl.Write([]byte(hideCursor))
+
 	sb := screenbuf.New(rl)
 
 	validFn := func(x string) error {
@@ -154,9 +163,13 @@ func (p *Prompt) Run() (string, error) {
 	}
 	eraseDefault := input != "" && !p.AllowEdit
 	cur := NewCursor(input, p.Pointer, eraseDefault)
-
+	cursorLen := len(cur.Cursor([]rune{}))
 	listen := func(input []rune, pos int, key rune) ([]rune, int, bool) {
 		_, _, keepOn := cur.Listen(input, pos, key)
+		// if keepOn is false, we should return immediately
+		if !keepOn {
+			return nil, 0, keepOn
+		}
 		err := validFn(cur.Get())
 		var prompt []byte
 
@@ -173,16 +186,20 @@ func (p *Prompt) Run() (string, error) {
 		if p.Mask != 0 {
 			echo = cur.FormatMask(p.Mask)
 		}
-
 		prompt = append(prompt, []byte(echo)...)
+
 		sb.Reset()
-		sb.Write(prompt)
+		// some cursor might have extra rune in the end of line
+		sb.WriteLineWrap(prompt, len([]rune(cur.input))+promptLen+cursorLen)
+
 		if inputErr != nil {
+			len := default_error_prompt_size + len(inputErr.Error())
 			validation := render(p.Templates.validation, inputErr)
-			sb.Write(validation)
+
+			sb.WriteLineWrap(validation, len)
 			inputErr = nil
 		}
-		sb.Flush()
+		sb.FlushLineWrap()
 		return nil, 0, keepOn
 	}
 
@@ -191,15 +208,14 @@ func (p *Prompt) Run() (string, error) {
 	for {
 		_, err = rl.Readline()
 		inputErr = validFn(cur.Get())
+
 		if inputErr == nil {
 			break
 		}
-
 		if err != nil {
 			break
 		}
 	}
-
 	if err != nil {
 		switch err {
 		case readline.ErrInterrupt:
@@ -211,16 +227,16 @@ func (p *Prompt) Run() (string, error) {
 			err = ErrInterrupt
 		}
 		sb.Reset()
-		sb.WriteString("")
-		sb.Flush()
 		rl.Write([]byte(showCursor))
 		rl.Close()
+
 		return "", err
 	}
 
-	echo := cur.Format()
+	// this is when input value is correct, we don't show cursor
+	echo := string(cur.input)
 	if p.Mask != 0 {
-		echo = cur.FormatMask(p.Mask)
+		echo = cur.FormatMaskNoCursor(p.Mask)
 	}
 
 	prompt := render(p.Templates.success, p.Label)
@@ -233,13 +249,11 @@ func (p *Prompt) Run() (string, error) {
 			err = ErrAbort
 		}
 	}
-
 	sb.Reset()
-	sb.Write(prompt)
-	sb.Flush()
+	sb.WriteLineWrap(prompt, len([]rune(cur.input))+promptLen)
+	sb.FlushLineWrap()
 	rl.Write([]byte(showCursor))
 	rl.Close()
-
 	return cur.Get(), err
 }
 
