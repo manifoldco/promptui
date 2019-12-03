@@ -7,8 +7,7 @@ import (
 	"text/template"
 
 	"github.com/chzyer/readline"
-
-	"tigergraph.com/thirdparty/promptui/screenbuf"
+	"github.com/tigergraph/promptui/screenbuf"
 )
 
 const default_prompt_placehold_size = 4
