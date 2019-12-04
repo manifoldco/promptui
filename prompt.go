@@ -190,7 +190,7 @@ func (p *Prompt) Run() (string, error) {
 
 		sb.Reset()
 		// some cursor might have extra rune in the end of line
-		sb.WriteLineWrap(prompt, len([]rune(cur.input))+promptLen+cursorLen)
+		sb.WriteLineWrap(prompt, len(cur.input)+promptLen+cursorLen)
 
 		if inputErr != nil {
 			len := default_error_prompt_size + len(inputErr.Error())
@@ -250,7 +250,7 @@ func (p *Prompt) Run() (string, error) {
 		}
 	}
 	sb.Reset()
-	sb.WriteLineWrap(prompt, len([]rune(cur.input))+promptLen)
+	sb.WriteLineWrap(prompt, len(cur.input)+promptLen)
 	sb.FlushLineWrap()
 	rl.Write([]byte(showCursor))
 	rl.Close()
