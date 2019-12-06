@@ -21,7 +21,6 @@ type ScreenBuf struct {
 	w      io.Writer
 	buf    *bytes.Buffer
 	reset  bool
-	flush  bool
 	cursor int
 	height int
 }
@@ -101,7 +100,7 @@ func (s *ScreenBuf) Write(b []byte) (int, error) {
 		s.cursor++
 		return n, nil
 	default:
-		return 0, fmt.Errorf("Invalid write cursor position (%d) exceeded line height: %d", s.cursor, s.height)
+		return 0, fmt.Errorf("invalid write cursor position (%d) exceeded line height: %d", s.cursor, s.height)
 	}
 }
 

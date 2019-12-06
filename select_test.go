@@ -156,7 +156,7 @@ func TestClearScreen(t *testing.T) {
 	var buf bytes.Buffer
 	sb := screenbuf.New(&buf)
 
-	sb.WriteString("test")
+	_, _ = sb.WriteString("test")
 	clearScreen(sb)
 
 	got := buf.String()

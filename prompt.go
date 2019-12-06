@@ -137,7 +137,7 @@ func (p *Prompt) Run() (string, error) {
 		return "", err
 	}
 	// we're taking over the cursor,  so stop showing it.
-	rl.Write([]byte(hideCursor))
+	_, _ = rl.Write([]byte(hideCursor))
 	sb := screenbuf.New(rl)
 
 	validFn := func(x string) error {
@@ -176,13 +176,13 @@ func (p *Prompt) Run() (string, error) {
 
 		prompt = append(prompt, []byte(echo)...)
 		sb.Reset()
-		sb.Write(prompt)
+		_, _ = sb.Write(prompt)
 		if inputErr != nil {
 			validation := render(p.Templates.validation, inputErr)
-			sb.Write(validation)
+			_, _ = sb.Write(validation)
 			inputErr = nil
 		}
-		sb.Flush()
+		_ = sb.Flush()
 		return nil, 0, keepOn
 	}
 
@@ -211,10 +211,10 @@ func (p *Prompt) Run() (string, error) {
 			err = ErrInterrupt
 		}
 		sb.Reset()
-		sb.WriteString("")
-		sb.Flush()
-		rl.Write([]byte(showCursor))
-		rl.Close()
+		_, _ = sb.WriteString("")
+		_ = sb.Flush()
+		_, _ = rl.Write([]byte(showCursor))
+		_ = rl.Close()
 		return "", err
 	}
 
@@ -235,10 +235,10 @@ func (p *Prompt) Run() (string, error) {
 	}
 
 	sb.Reset()
-	sb.Write(prompt)
-	sb.Flush()
-	rl.Write([]byte(showCursor))
-	rl.Close()
+	_, _ = sb.Write(prompt)
+	_ = sb.Flush()
+	_, _ = rl.Write([]byte(showCursor))
+	_ = rl.Close()
 
 	return cur.Get(), err
 }

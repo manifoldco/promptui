@@ -70,8 +70,6 @@ type Select struct {
 	// For search mode to work, the Search property must be implemented.
 	StartInSearchMode bool
 
-	label string
-
 	list *list.List
 
 	// A function that determines how to render the cursor
@@ -242,7 +240,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		return 0, "", err
 	}
 
-	rl.Write([]byte(hideCursor))
+	_, _ = rl.Write([]byte(hideCursor))
 	sb := screenbuf.New(rl)
 
 	cur := NewCursor("", s.Pointer, false)
@@ -296,14 +294,14 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 
 		if searchMode {
 			header := SearchPrompt + cur.Format()
-			sb.WriteString(header)
+			_, _ = sb.WriteString(header)
 		} else if !s.HideHelp {
 			help := s.renderHelp(canSearch)
-			sb.Write(help)
+			_, _ = sb.Write(help)
 		}
 
 		label := render(s.Templates.label, s.Label)
-		sb.Write(label)
+		_, _ = sb.Write(label)
 
 		items, idx := s.list.Items()
 		last := len(items) - 1
@@ -332,22 +330,22 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 				output = append(output, render(s.Templates.inactive, item)...)
 			}
 
-			sb.Write(output)
+			_, _ = sb.Write(output)
 		}
 
 		if idx == list.NotFound {
-			sb.WriteString("")
-			sb.WriteString("No results")
+			_, _ = sb.WriteString("")
+			_, _ = sb.WriteString("No results")
 		} else {
 			active := items[idx]
 
 			details := s.renderDetails(active)
 			for _, d := range details {
-				sb.Write(d)
+				_, _ = sb.Write(d)
 			}
 		}
 
-		sb.Flush()
+		_ = sb.Flush()
 
 		return nil, 0, true
 	})
@@ -377,10 +375,10 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			err = ErrInterrupt
 		}
 		sb.Reset()
-		sb.WriteString("")
-		sb.Flush()
-		rl.Write([]byte(showCursor))
-		rl.Close()
+		_, _ = sb.WriteString("")
+		_ = sb.Flush()
+		_, _ = rl.Write([]byte(showCursor))
+		_ = rl.Close()
 		return 0, "", err
 	}
 
@@ -391,12 +389,12 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		clearScreen(sb)
 	} else {
 		sb.Reset()
-		sb.Write(render(s.Templates.selected, item))
-		sb.Flush()
+		_, _ = sb.Write(render(s.Templates.selected, item))
+		_ = sb.Flush()
 	}
 
-	rl.Write([]byte(showCursor))
-	rl.Close()
+	_, _ = rl.Write([]byte(showCursor))
+	_ = rl.Close()
 
 	return s.list.Index(), fmt.Sprintf("%v", item), err
 }
@@ -527,7 +525,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	if len(sa.Items) > 0 {
 		newItems := append([]string{sa.AddLabel}, sa.Items...)
 
-		list, err := list.New(newItems, 5)
+		l, err := list.New(newItems, 5)
 		if err != nil {
 			return 0, "", err
 		}
@@ -538,7 +536,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			IsVimMode: sa.IsVimMode,
 			HideHelp:  sa.HideHelp,
 			Size:      5,
-			list:      list,
+			list:      l,
 			Pointer:   sa.Pointer,
 		}
 		s.setKeys()
@@ -554,7 +552,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 		}
 
 		// XXX run through terminal for windows
-		os.Stdout.Write([]byte(upLine(1) + "\r" + clearLine))
+		_, _ = os.Stdout.Write([]byte(upLine(1) + "\r" + clearLine))
 	}
 
 	p := Prompt{
@@ -590,10 +588,10 @@ func (s *Select) renderDetails(item interface{}) [][]byte {
 
 	err := s.Templates.details.Execute(w, item)
 	if err != nil {
-		fmt.Fprintf(w, "%v", item)
+		_, _ = fmt.Fprintf(w, "%v", item)
 	}
 
-	w.Flush()
+	_ = w.Flush()
 
 	output := buf.Bytes()
 
@@ -631,6 +629,6 @@ func render(tpl *template.Template, data interface{}) []byte {
 
 func clearScreen(sb *screenbuf.ScreenBuf) {
 	sb.Reset()
-	sb.Clear()
-	sb.Flush()
+	_ = sb.Clear()
+	_ = sb.Flush()
 }
