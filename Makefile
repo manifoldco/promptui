@@ -1,4 +1,5 @@
 export GO111MODULE := on
+export PATH := ./bin:$(PATH)
 
 ci: bootstrap test lint cover
 .PHONY: ci
@@ -7,9 +8,9 @@ ci: bootstrap test lint cover
 # Bootstrapping for base golang package and tool deps
 #################################################
 
-.PHONY: bootstrap
 bootstrap:
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(GOPATH)/bin v1.21.0
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.21.0
+.PHONY: bootstrap
 
 $(patsubst %,%-bin,$(filter-out gofmt vet,golangci-lint)): %-bin:
 gofmt-bin vet-bin:
