@@ -1,6 +1,6 @@
 export GO111MODULE := on
 
-ci: test lint cover
+ci: bootstrap test lint cover
 .PHONY: ci
 
 #################################################
@@ -8,8 +8,8 @@ ci: test lint cover
 #################################################
 
 .PHONY: bootstrap
-bootstrap: mod-tidy
-    curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.21.0
+bootstrap:
+	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b $(GOPATH)/bin v1.21.0
 
 $(patsubst %,%-bin,$(filter-out gofmt vet,golangci-lint)): %-bin:
 gofmt-bin vet-bin:
