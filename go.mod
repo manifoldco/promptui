@@ -2,9 +2,6 @@ module github.com/manifoldco/promptui
 
 go 1.11
 
-// Do not change the versions of kingpin or go-i18n;
-// we will remove them when we stop using gometalinter
-
 require (
 	github.com/chzyer/logex v1.1.10 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e

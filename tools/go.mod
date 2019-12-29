@@ -1,6 +1,9 @@
 module github.com/manifoldco/promptui/tools
 
-go 1.13
+go 1.11
+
+// Do not change the versions of kingpin or go-i18n;
+// we will remove them when we stop using gometalinter
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
