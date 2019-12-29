@@ -1,4 +1,4 @@
-LINTERS=$(shell grep "// lint" tools.go | awk '{gsub(/\"/, "", $$1); print $$1}' | awk -F / '{print $$NF}') \
+LINTERS=$(shell grep "// lint" tools/tools.go | awk '{gsub(/\"/, "", $$1); print $$1}' | awk -F / '{print $$NF}') \
 	gofmt \
 	vet
 
@@ -10,19 +10,22 @@ ci: $(LINTERS) cover
 # Bootstrapping for base golang package and tool deps
 #################################################
 
-CMD_PKGS=$(shell grep '	"' tools.go | awk -F '"' '{print $$2}')
+CMD_PKGS=$(shell grep '	"' tools/tools.go | awk -F '"' '{print $$2}')
 
 define VENDOR_BIN_TMPL
-vendor/bin/$(notdir $(1)): vendor/$(1) | vendor
-	go build -a -o $$@ ./vendor/$(1)
-VENDOR_BINS += vendor/bin/$(notdir $(1))
-vendor/$(1): vendor
+tools/vendor/bin/$(notdir $(1)): tools/vendor/$(1) | tools/vendor
+	GOBIN=`pwd`/tools/vendor/bin sh -c 'cd tools && go install ./vendor/$(1)'
+VENDOR_BINS += tools/vendor/bin/$(notdir $(1))
+tools/vendor/$(1): tools/vendor
 endef
 
 $(foreach cmd_pkg,$(CMD_PKGS),$(eval $(call VENDOR_BIN_TMPL,$(cmd_pkg))))
 
-$(patsubst %,%-bin,$(filter-out gofmt vet,$(LINTERS))): %-bin: vendor/bin/%
+$(patsubst %,%-bin,$(filter-out gofmt vet,$(LINTERS))): %-bin: tools/vendor/bin/%
 gofmt-bin vet-bin:
+
+tools/vendor: tools/go.sum
+	GO111MODULE=on sh -c 'cd tools && go mod vendor'
 
 vendor: go.sum
 	GO111MODULE=on go mod vendor
@@ -44,8 +47,8 @@ mod-tidy:
 test: vendor
 	CGO_ENABLED=0 go test $$(go list ./... | grep -v generated)
 
-$(LINTERS): %: vendor/bin/gometalinter %-bin vendor
-	PATH=`pwd`/vendor/bin:$$PATH gometalinter --tests --disable-all --vendor \
+$(LINTERS): %: tools/vendor/bin/gometalinter %-bin tools/vendor
+	PATH=`pwd`/tools/vendor/bin:$$PATH gometalinter --tests --disable-all --vendor \
 		--deadline=5m -s data --enable $@ ./...
 
 COVER_TEST_PKGS:=$(shell find . -type f -name '*_test.go' | grep -v vendor | rev | cut -d "/" -f 2- | rev | grep -v generated | sort -u)
