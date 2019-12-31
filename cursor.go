@@ -121,6 +121,10 @@ func (c *Cursor) Format() string {
 
 // FormatMask replaces all input runes with the mask rune.
 func (c *Cursor) FormatMask(mask rune) string {
+	if mask == ' ' {
+		return format([]rune{}, c)
+	}
+
 	r := make([]rune, len(c.input))
 	for i := range r {
 		r[i] = mask
