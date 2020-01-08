@@ -13,7 +13,7 @@ ci: $(LINTERS) cover
 CMD_PKGS=$(shell grep '	"' tools/tools.go | awk -F '"' '{print $$2}')
 
 define VENDOR_BIN_TMPL
-tools/vendor/bin/$(notdir $(1)): tools/vendor/$(1) | tools/vendor
+tools/vendor/bin/$(notdir $(1)): tools/vendor/$(1) | vendor tools/vendor
 	GOBIN=`pwd`/tools/vendor/bin sh -c 'cd tools && go install ./vendor/$(1)'
 VENDOR_BINS += tools/vendor/bin/$(notdir $(1))
 tools/vendor/$(1): tools/vendor
