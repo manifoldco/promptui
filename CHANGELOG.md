@@ -11,11 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Add support for configurable Stdin/Stdout on Prompt
 - Add support for setting initial cursor position
+- Switch to golangci-lint for linting
 
 ### Fixed
 
 - Reduce tool-based deps, hopefully fixing any install issues
-
 
 ## [0.6.0] - 2019-11-29
 

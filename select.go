@@ -73,8 +73,6 @@ type Select struct {
 	// For search mode to work, the Search property must be implemented.
 	StartInSearchMode bool
 
-	label string
-
 	list *list.List
 
 	// A function that determines how to render the cursor
@@ -282,7 +280,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 
 			cur.Backspace()
 			if len(cur.Get()) > 0 {
-				s.list.Search(string(cur.Get()))
+				s.list.Search(cur.Get())
 			} else {
 				s.list.CancelSearch()
 			}
@@ -293,7 +291,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		default:
 			if canSearch && searchMode {
 				cur.Update(string(line))
-				s.list.Search(string(cur.Get()))
+				s.list.Search(cur.Get())
 			}
 		}
 

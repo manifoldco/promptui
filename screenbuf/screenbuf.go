@@ -21,7 +21,6 @@ type ScreenBuf struct {
 	w      io.Writer
 	buf    *bytes.Buffer
 	reset  bool
-	flush  bool
 	cursor int
 	height int
 }
@@ -77,11 +76,17 @@ func (s *ScreenBuf) Write(b []byte) (int, error) {
 		if err != nil {
 			return n, err
 		}
-		line := append(b, []byte("\n")...)
-		n, err = s.buf.Write(line)
+
+		n, err = s.buf.Write(b)
 		if err != nil {
 			return n, err
 		}
+
+		_, err = s.buf.Write([]byte("\n"))
+		if err != nil {
+			return n, err
+		}
+
 		s.height++
 		s.cursor++
 		return n, nil
