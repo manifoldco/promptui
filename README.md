@@ -2,7 +2,8 @@
 
 Interactive prompt for command-line applications.
 
-We built Promptui because we wanted to make it easy and fun to explore cloud services with [manifold cli](https://github.com/manifoldco/manifold-cli).
+We built Promptui because we wanted to make it easy and fun to explore cloud
+services with [manifold cli](https://github.com/manifoldco/manifold-cli).
 
 [Code of Conduct](./CODE_OF_CONDUCT.md) |
 [Contribution Guidelines](./.github/CONTRIBUTING.md)

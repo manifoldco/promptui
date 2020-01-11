@@ -100,7 +100,7 @@ func format(a []rune, c *Cursor) string {
 
 	out := make([]rune, 0)
 	if i < len(a) {
-		b = c.Cursor([]rune(a[i : i+1]))
+		b = c.Cursor(a[i : i+1])
 		out = append(out, a[:i]...)   // does not include i
 		out = append(out, b...)       // add the cursor
 		out = append(out, a[i+1:]...) // add the rest after i
