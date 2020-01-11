@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+## [0.7.0] - 2020-01-11
+
 ### Added
 
 - Add support for configurable Stdin/Stdout on Prompt
