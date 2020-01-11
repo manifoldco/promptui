@@ -1,6 +1,6 @@
 module github.com/manifoldco/promptui
 
-go 1.11
+go 1.12
 
 require (
 	github.com/chzyer/logex v1.1.10 // indirect
