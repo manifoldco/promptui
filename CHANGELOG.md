@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add support for setting initial cursor position
 - Switch to golangci-lint for linting
 
+### Removed
+
+- Removed support for Go 1.11
+
 ### Fixed
 
 - Reduce tool-based deps, hopefully fixing any install issues
