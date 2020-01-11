@@ -41,6 +41,9 @@ type Select struct {
 	// Size is the number of items that should appear on the select before scrolling is necessary. Defaults to 5.
 	Size int
 
+	// CursorPos is the initial position of the cursor.
+	CursorPos int
+
 	// IsVimMode sets whether to use vim mode when using readline in the command prompt. Look at
 	// https://godoc.org/github.com/chzyer/readline#Config for more information on readline.
 	IsVimMode bool
@@ -187,7 +190,7 @@ var SearchPrompt = "Search: "
 // the command prompt or it has received a valid value. It will return the value and an error if any
 // occurred during the select's execution.
 func (s *Select) Run() (int, string, error) {
-	return s.RunCursorAt(0, 0)
+	return s.RunCursorAt(s.CursorPos, 0)
 }
 
 // RunCursorAt executes the select list, initializing the cursor to the given
