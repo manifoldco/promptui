@@ -29,6 +29,9 @@ type Prompt struct {
 	// Validate is an optional function that fill be used against the entered value in the prompt to validate it.
 	Validate ValidateFunc
 
+	// Lazy validation on <Enter> only.
+	LazyValidation bool
+
 	// Mask is an optional rune that sets which character to display instead of the entered characters. This
 	// allows hiding private information like passwords.
 	Mask rune
@@ -157,10 +160,17 @@ func (p *Prompt) Run() (string, error) {
 
 	listen := func(input []rune, pos int, key rune) ([]rune, int, bool) {
 		_, _, keepOn := cur.Listen(input, pos, key)
-		err := validFn(cur.Get())
-		var prompt []byte
+		var (
+			err    error
+			prompt []byte
+		)
 
-		if err != nil {
+		if p.LazyValidation == false {
+			err = validFn(cur.Get())
+		}
+		
+
+		if err != nil || p.LazyValidation {
 			prompt = render(p.Templates.invalid, p.Label)
 		} else {
 			prompt = render(p.Templates.valid, p.Label)
