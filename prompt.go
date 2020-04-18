@@ -218,9 +218,9 @@ func (p *Prompt) Run() (string, error) {
 		return "", err
 	}
 
-	echo := cur.Format()
+	echo := cur.Get()
 	if p.Mask != 0 {
-		echo = cur.FormatMask(p.Mask)
+		echo = cur.GetMask(p.Mask)
 	}
 
 	prompt := render(p.Templates.success, p.Label)
