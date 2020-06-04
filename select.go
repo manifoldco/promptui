@@ -99,6 +99,9 @@ type SelectKeys struct {
 
 	// Search is the key used to trigger the search mode for the list. Default to the "/" key.
 	Search Key
+
+	// Exit is the key used to correctly shutdown the process. Default to the "q" key.
+	Exit Key
 }
 
 // Key defines a keyboard code and a display representation for the help menu.
@@ -273,6 +276,12 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			} else {
 				searchMode = true
 			}
+		case key == s.Keys.Exit.Code:
+			clearScreen(sb)
+			rl.Write([]byte(showCursor))
+			rl.Clean()
+			rl.Close()
+			os.Exit(0)
 		case key == KeyBackspace:
 			if !canSearch || !searchMode {
 				break
@@ -578,6 +587,7 @@ func (s *Select) setKeys() {
 		PageUp:   Key{Code: KeyBackward, Display: KeyBackwardDisplay},
 		PageDown: Key{Code: KeyForward, Display: KeyForwardDisplay},
 		Search:   Key{Code: '/', Display: "/"},
+		Exit:     Key{Code: 'q', Display: "q"},
 	}
 }
 
