@@ -285,7 +285,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			} else {
 				searchMode = true
 			}
-		case key == s.Keys.Exit.Code:
+		case key == s.Keys.Exit.Code && !searchMode:
 			isExit = true
 		case key == KeyBackspace:
 			if !canSearch || !searchMode {
