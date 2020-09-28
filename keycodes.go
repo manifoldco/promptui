@@ -13,6 +13,9 @@ var (
 	// KeyBackspace is the default key for deleting input text.
 	KeyBackspace rune = readline.CharBackspace
 
+	// KeyCtrlH is the key for deleting input text.
+	KeyCtrlH rune = readline.CharCtrlH
+
 	// KeyPrev is the default key to go up during selection.
 	KeyPrev        rune = readline.CharPrev
 	KeyPrevDisplay      = "↑"
