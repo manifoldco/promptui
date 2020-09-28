@@ -1,6 +1,9 @@
 package promptui
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Pointer is A specific type that translates a given set of runes into a given
 // set of runes pointed at by the cursor.
@@ -142,6 +145,11 @@ func (c *Cursor) Update(newinput string) {
 // Get returns a copy of the input
 func (c *Cursor) Get() string {
 	return string(c.input)
+}
+
+// GetMask returns a mask string with length equal to the input
+func (c *Cursor) GetMask(mask rune) string {
+	return strings.Repeat(string(mask), len(c.input))
 }
 
 // Replace replaces the previous input with whatever is specified, and moves the
