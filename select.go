@@ -273,7 +273,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			} else {
 				searchMode = true
 			}
-		case key == KeyBackspace:
+		case key == KeyBackspace || key == KeyCtrlH:
 			if !canSearch || !searchMode {
 				break
 			}

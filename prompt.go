@@ -33,6 +33,9 @@ type Prompt struct {
 	// allows hiding private information like passwords.
 	Mask rune
 
+	// HideEntered sets whether to hide the text after the user has pressed enter.
+	HideEntered bool
+
 	// Templates can be used to customize the prompt output. If nil is passed, the
 	// default templates are used. See the PromptTemplates docs for more info.
 	Templates *PromptTemplates
@@ -218,9 +221,9 @@ func (p *Prompt) Run() (string, error) {
 		return "", err
 	}
 
-	echo := cur.Format()
+	echo := cur.Get()
 	if p.Mask != 0 {
-		echo = cur.FormatMask(p.Mask)
+		echo = cur.GetMask(p.Mask)
 	}
 
 	prompt := render(p.Templates.success, p.Label)
@@ -234,9 +237,14 @@ func (p *Prompt) Run() (string, error) {
 		}
 	}
 
-	sb.Reset()
-	sb.Write(prompt)
-	sb.Flush()
+	if p.HideEntered {
+		clearScreen(sb)
+	} else {
+		sb.Reset()
+		sb.Write(prompt)
+		sb.Flush()
+	}
+
 	rl.Write([]byte(showCursor))
 	rl.Close()
 
