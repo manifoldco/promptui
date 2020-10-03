@@ -18,6 +18,9 @@ import (
 // SelectWithAdd's logic.
 const SelectedAdd = -1
 
+// ExitCode is default exit code. It will be returned on application exit.
+const ExitCode = 0
+
 // Select represents a list of items used to enable selections, they can be used as search engines, menus
 // or as a list of items in a cli based prompt.
 type Select struct {
@@ -78,6 +81,10 @@ type Select struct {
 	// A function that determines how to render the cursor
 	Pointer Pointer
 
+	// A value that can de returned as result of Run() on ExitKey pressing.
+	// If not defined, application will be closed on ExitKey pressing.
+	ExitValue string
+
 	Stdin  io.ReadCloser
 	Stdout io.WriteCloser
 }
@@ -99,6 +106,9 @@ type SelectKeys struct {
 
 	// Search is the key used to trigger the search mode for the list. Default to the "/" key.
 	Search Key
+
+	// Exit is the key used to correctly shutdown the process. Default to the "q" key.
+	Exit Key
 }
 
 // Key defines a keyboard code and a display representation for the help menu.
@@ -220,6 +230,8 @@ func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 }
 
 func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) {
+	isExit := bool(false)
+
 	c := &readline.Config{
 		Stdin:  s.Stdin,
 		Stdout: s.Stdout,
@@ -273,6 +285,8 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			} else {
 				searchMode = true
 			}
+		case key == s.Keys.Exit.Code && !searchMode:
+			isExit = true
 		case key == KeyBackspace || key == KeyCtrlH:
 			if !canSearch || !searchMode {
 				break
@@ -293,6 +307,10 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 				cur.Update(string(line))
 				s.list.Search(cur.Get())
 			}
+		}
+
+		if isExit {
+			closeReadlineInstance(rl)
 		}
 
 		if searchMode {
@@ -356,6 +374,11 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	for {
 		_, err = rl.Readline()
 
+		if isExit {
+			err = nil
+			break
+		}
+
 		if err != nil {
 			switch {
 			case err == readline.ErrInterrupt, err.Error() == "Interrupt":
@@ -383,6 +406,14 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		rl.Write([]byte(showCursor))
 		rl.Close()
 		return 0, "", err
+	}
+
+	if isExit {
+		clearScreen(sb)
+		if s.ExitValue != "" {
+			return s.list.Index(), fmt.Sprintf("%v", s.ExitValue), err
+		}
+		os.Exit(ExitCode)
 	}
 
 	items, idx := s.list.Items()
@@ -513,6 +544,9 @@ type SelectWithAdd struct {
 	// a function that defines how to render the cursor
 	Pointer Pointer
 
+	// A value that can de returned on exit as result of Run()
+	ExitValue string
+
 	// HideHelp sets whether to hide help information.
 	HideHelp bool
 }
@@ -541,6 +575,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			Size:      5,
 			list:      list,
 			Pointer:   sa.Pointer,
+			ExitValue: sa.ExitValue,
 		}
 		s.setKeys()
 
@@ -578,6 +613,7 @@ func (s *Select) setKeys() {
 		PageUp:   Key{Code: KeyBackward, Display: KeyBackwardDisplay},
 		PageDown: Key{Code: KeyForward, Display: KeyForwardDisplay},
 		Search:   Key{Code: '/', Display: "/"},
+		Exit:     Key{Code: 'q', Display: "q"},
 	}
 }
 
@@ -634,4 +670,10 @@ func clearScreen(sb *screenbuf.ScreenBuf) {
 	sb.Reset()
 	sb.Clear()
 	sb.Flush()
+}
+
+func closeReadlineInstance(rl *readline.Instance) {
+	rl.Write([]byte(showCursor))
+	rl.Clean()
+	rl.Close()
 }
