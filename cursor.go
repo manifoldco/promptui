@@ -1,6 +1,9 @@
 package promptui
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Pointer is A specific type that translates a given set of runes into a given
 // set of runes pointed at by the cursor.
@@ -121,6 +124,10 @@ func (c *Cursor) Format() string {
 
 // FormatMask replaces all input runes with the mask rune.
 func (c *Cursor) FormatMask(mask rune) string {
+	if mask == ' ' {
+		return format([]rune{}, c)
+	}
+
 	r := make([]rune, len(c.input))
 	for i := range r {
 		r[i] = mask
@@ -142,6 +149,11 @@ func (c *Cursor) Update(newinput string) {
 // Get returns a copy of the input
 func (c *Cursor) Get() string {
 	return string(c.input)
+}
+
+// GetMask returns a mask string with length equal to the input
+func (c *Cursor) GetMask(mask rune) string {
+	return strings.Repeat(string(mask), len(c.input))
 }
 
 // Replace replaces the previous input with whatever is specified, and moves the
@@ -195,7 +207,7 @@ func (c *Cursor) Listen(line []rune, pos int, key rune) ([]rune, int, bool) {
 	case 0: // empty
 	case KeyEnter:
 		return []rune(c.Get()), c.Position, false
-	case KeyBackspace:
+	case KeyBackspace, KeyCtrlH:
 		if c.erase {
 			c.erase = false
 			c.Replace("")
