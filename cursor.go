@@ -213,6 +213,15 @@ func (c *Cursor) Listen(line []rune, pos int, key rune) ([]rune, int, bool) {
 			c.Replace("")
 		}
 		c.Backspace()
+	case KeyDelete:
+		if c.Position < len(c.input) {
+			if c.erase {
+				c.erase = false
+				c.Replace("")
+			}
+			c.Move(1)
+			c.Backspace()
+		}
 	case KeyForward:
 		// the user wants to edit the default, despite how we set it up. Let
 		// them.

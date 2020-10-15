@@ -193,9 +193,18 @@ func (p *Prompt) Run() (string, error) {
 
 	for {
 		_, err = rl.Readline()
+		if err == io.EOF && len(cur.Get()) > 0 {
+			err = nil
+			continue
+		}
+
 		inputErr = validFn(cur.Get())
 		if inputErr == nil {
 			break
+		}
+
+		if err == io.EOF {
+			err = nil
 		}
 
 		if err != nil {
@@ -210,14 +219,17 @@ func (p *Prompt) Run() (string, error) {
 		case io.EOF:
 			err = ErrEOF
 		}
+
 		if err.Error() == "Interrupt" {
 			err = ErrInterrupt
 		}
+
 		sb.Reset()
 		sb.WriteString("")
 		sb.Flush()
 		rl.Write([]byte(showCursor))
 		rl.Close()
+
 		return "", err
 	}
 
