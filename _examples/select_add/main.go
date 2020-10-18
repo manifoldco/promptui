@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/manifoldco/promptui"
+	"github.com/spaceweasel/promptui"
 )
 
 func main() {
