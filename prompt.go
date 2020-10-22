@@ -29,6 +29,11 @@ type Prompt struct {
 	// Validate is an optional function that fill be used against the entered value in the prompt to validate it.
 	Validate ValidateFunc
 
+	// Password enables password mode for the prompt, optionally you can provide a `Mask` that covers the entered
+	// characters. If no `Mask` is provided, the default will be the '\0' (null terminator), completely hiding
+	// the amount of characters entered.
+	Password bool
+
 	// Mask is an optional rune that sets which character to display instead of the entered characters. This
 	// allows hiding private information like passwords.
 	Mask rune
@@ -115,6 +120,8 @@ type PromptTemplates struct {
 func (p *Prompt) Run() (string, error) {
 	var err error
 
+	isMasked := p.Password || p.Mask != 0
+
 	err = p.prepareTemplates()
 	if err != nil {
 		return "", err
@@ -123,11 +130,14 @@ func (p *Prompt) Run() (string, error) {
 	c := &readline.Config{
 		Stdin:          p.Stdin,
 		Stdout:         p.Stdout,
-		EnableMask:     p.Mask != 0,
-		MaskRune:       p.Mask,
+		EnableMask:     isMasked,
 		HistoryLimit:   -1,
 		VimMode:        p.IsVimMode,
 		UniqueEditLine: true,
+	}
+
+	if isMasked {
+		c.MaskRune = p.Mask
 	}
 
 	err = c.Init()
@@ -173,7 +183,7 @@ func (p *Prompt) Run() (string, error) {
 		}
 
 		echo := cur.Format()
-		if p.Mask != 0 {
+		if isMasked {
 			echo = cur.FormatMask(p.Mask)
 		}
 
@@ -222,7 +232,7 @@ func (p *Prompt) Run() (string, error) {
 	}
 
 	echo := cur.Get()
-	if p.Mask != 0 {
+	if isMasked {
 		echo = cur.GetMask(p.Mask)
 	}
 
