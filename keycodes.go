@@ -8,6 +8,9 @@ var (
 	// KeyEnter is the default key for submission/selection.
 	KeyEnter rune = readline.CharEnter
 
+	// KeySpace is the default key for multiselect selection.
+	KeySpace rune = ' '
+
 	// KeyCtrlH is the key for deleting input text.
 	KeyCtrlH rune = readline.CharCtrlH
 
