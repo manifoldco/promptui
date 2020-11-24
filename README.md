@@ -31,7 +31,7 @@ Promptui has two main input modes:
 - `Select` provides a list of options to choose from. Select supports
   pagination, search, detailed view and custom templates.
 
-For a full list of options check [GoDoc](https://godoc.org/github.com/manifoldco/promptui).
+For a full list of options check [GoDoc](https://pkg.go.dev/github.com/manifoldco/promptui).
 
 ## Basic Usage
 
