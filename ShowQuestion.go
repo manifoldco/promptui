@@ -19,7 +19,7 @@ func ShowQuestion(message string) bool {
 	}
 
 	prompt := promptui.Prompt{
-		Label:    "Do you want to continue?",
+		Label:   message
 		Validate: validate,
 		Default:  "y",
 	}
