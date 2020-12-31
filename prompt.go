@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/chzyer/readline"
@@ -113,6 +114,9 @@ type PromptTemplates struct {
 // Run will keep the prompt alive until it has been canceled from the command prompt or it has received a valid
 // value. It will return the value and an error if any occurred during the prompt's execution.
 func (p *Prompt) Run() (string, error) {
+	mutex := new(sync.Mutex)
+	closing := false
+
 	var err error
 
 	err = p.prepareTemplates()
@@ -159,6 +163,13 @@ func (p *Prompt) Run() (string, error) {
 	cur := NewCursor(input, p.Pointer, eraseDefault)
 
 	listen := func(input []rune, pos int, key rune) ([]rune, int, bool) {
+		mutex.Lock()
+		defer mutex.Unlock()
+
+		if closing {
+			return nil, 0, false
+		}
+
 		_, _, keepOn := cur.Listen(input, pos, key)
 		err := validFn(cur.Get())
 		var prompt []byte
@@ -193,6 +204,7 @@ func (p *Prompt) Run() (string, error) {
 
 	for {
 		_, err = rl.Readline()
+		mutex.Lock()
 		inputErr = validFn(cur.Get())
 		if inputErr == nil {
 			break
@@ -201,7 +213,11 @@ func (p *Prompt) Run() (string, error) {
 		if err != nil {
 			break
 		}
+		mutex.Unlock()
 	}
+
+	defer mutex.Unlock()
+	closing = true
 
 	if err != nil {
 		switch err {
