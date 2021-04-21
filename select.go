@@ -72,6 +72,9 @@ type Select struct {
 	// StartInSearchMode sets whether or not the select mode should start in search mode or selection mode.
 	// For search mode to work, the Search property must be implemented.
 	StartInSearchMode bool
+	
+	// PrefillSearch is set as the value of the search field when search mode is enabled for the first time.
+	PrefillSearch string
 
 	list *list.List
 
@@ -246,7 +249,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	rl.Write([]byte(hideCursor))
 	sb := screenbuf.New(rl)
 
-	cur := NewCursor("", s.Pointer, false)
+	cur := NewCursor(s.PrefillSearch, s.Pointer, false)
 
 	canSearch := s.Searcher != nil
 	searchMode := s.StartInSearchMode
