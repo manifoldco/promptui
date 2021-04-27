@@ -19,7 +19,7 @@ func ShowQuestion(message string) bool {
 	}
 
 	prompt := promptui.Prompt{
-		Label:   message
+		Label:   message,
 		Validate: validate,
 		Default:  "y",
 	}
