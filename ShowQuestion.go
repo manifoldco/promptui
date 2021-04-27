@@ -26,7 +26,7 @@ func ShowQuestion(message string) bool {
 
 	result, err := prompt.Run()
 	if err != nil {
-		return showQuestion(message)
+		return ShowQuestion(message)
 	}
 
 	result = strings.ToLower(result)
