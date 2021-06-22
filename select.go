@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"text/template"
 
 	"github.com/chzyer/readline"
@@ -246,6 +247,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	rl.Write([]byte(hideCursor))
 	sb := screenbuf.New(rl)
 
+	var curLock sync.Mutex
 	cur := NewCursor("", s.Pointer, false)
 
 	canSearch := s.Searcher != nil
@@ -254,6 +256,8 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	s.list.SetStart(scroll)
 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
+		defer curLock.Unlock()
+		curLock.Lock()
 		switch {
 		case key == KeyEnter:
 			return nil, 0, true
@@ -372,7 +376,8 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		}
 
 	}
-
+	defer curLock.Unlock()
+	curLock.Lock()
 	if err != nil {
 		if err.Error() == "Interrupt" {
 			err = ErrInterrupt
