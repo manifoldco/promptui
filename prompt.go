@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/chzyer/readline"
@@ -157,10 +158,14 @@ func (p *Prompt) Run() (string, error) {
 	}
 	eraseDefault := input != "" && !p.AllowEdit
 	cur := NewCursor(input, p.Pointer, eraseDefault)
+	var curLock sync.Mutex
 
 	listen := func(input []rune, pos int, key rune) ([]rune, int, bool) {
+		defer curLock.Unlock()
+		curLock.Lock()
 		_, _, keepOn := cur.Listen(input, pos, key)
 		err := validFn(cur.Get())
+
 		var prompt []byte
 
 		if err != nil {
@@ -193,7 +198,10 @@ func (p *Prompt) Run() (string, error) {
 
 	for {
 		_, err = rl.Readline()
+		curLock.Lock()
 		inputErr = validFn(cur.Get())
+		curLock.Unlock()
+
 		if inputErr == nil {
 			break
 		}
@@ -203,6 +211,8 @@ func (p *Prompt) Run() (string, error) {
 		}
 	}
 
+	defer curLock.Unlock()
+	curLock.Lock()
 	if err != nil {
 		switch err {
 		case readline.ErrInterrupt:
