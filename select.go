@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"text/template"
 
 	"github.com/chzyer/readline"
 	"github.com/juju/ansiterm"
+
 	"github.com/manifoldco/promptui/list"
 	"github.com/manifoldco/promptui/screenbuf"
 )
@@ -515,6 +515,9 @@ type SelectWithAdd struct {
 
 	// HideHelp sets whether to hide help information.
 	HideHelp bool
+
+	Stdin  io.ReadCloser
+	Stdout io.WriteCloser
 }
 
 // Run executes the select list. Its displays the label and the list of items, asking the user to chose any
@@ -541,6 +544,8 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			Size:      5,
 			list:      list,
 			Pointer:   sa.Pointer,
+			Stdin:     sa.Stdin,
+			Stdout:    sa.Stdout,
 		}
 		s.setKeys()
 
@@ -555,7 +560,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 		}
 
 		// XXX run through terminal for windows
-		os.Stdout.Write([]byte(upLine(1) + "\r" + clearLine))
+		sa.Stdout.Write([]byte(upLine(1) + "\r" + clearLine))
 	}
 
 	p := Prompt{
