@@ -158,18 +158,20 @@ func (p *Prompt) Run() (string, error) {
 	eraseDefault := input != "" && !p.AllowEdit
 	cur := NewCursor(input, p.Pointer, eraseDefault)
 
+	initial := true
 	listen := func(input []rune, pos int, key rune) ([]rune, int, bool) {
 		_, _, keepOn := cur.Listen(input, pos, key)
 		err := validFn(cur.Get())
 		var prompt []byte
 
-		if err != nil {
+		initial = initial && len(input) == 0 && key == 0
+		switch {
+		case initial || p.IsConfirm:
+			prompt = render(p.Templates.prompt, p.Label)
+		case err != nil:
 			prompt = render(p.Templates.invalid, p.Label)
-		} else {
+		case err == nil:
 			prompt = render(p.Templates.valid, p.Label)
-			if p.IsConfirm {
-				prompt = render(p.Templates.prompt, p.Label)
-			}
 		}
 
 		echo := cur.Format()
