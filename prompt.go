@@ -77,7 +77,7 @@ type PromptTemplates struct {
 	// Prompt is a text/template for the prompt label displayed on the left side of the prompt.
 	Prompt string
 
-	// Prompt is a text/template for the prompt label when IsConfirm is set as true.
+	// Confirm is a text/template for the prompt label when IsConfirm is set as true.
 	Confirm string
 
 	// Valid is a text/template for the prompt label when the value entered is valid.
@@ -91,7 +91,7 @@ type PromptTemplates struct {
 	// inside the console.
 	Success string
 
-	// Prompt is a text/template for the prompt label when the value is invalid due to an error triggered by
+	// ValidationError is a text/template for the prompt label when the value is invalid due to an error triggered by
 	// the prompt's validation function.
 	ValidationError string
 
