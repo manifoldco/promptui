@@ -2,13 +2,13 @@ dist: bionic
 language: go
 
 go:
-  - "1.12.x"
-  - "1.13.x"
+  - "1.16.x"
+  - "1.17.x"
 
 branches:
   only:
     - master
 
 after_success:
-  # only report coverage for go-version 1.11
-  - if [[ $TRAVIS_GO_VERSION =~ ^1\.11 ]] ; then bash <(curl -s https://codecov.io/bash) -f all-cover.txt; fi
+  # only report coverage for go-version 1.16
+  - if [[ $TRAVIS_GO_VERSION =~ ^1\.16 ]] ; then bash <(curl -s https://codecov.io/bash) -f all-cover.txt; fi
