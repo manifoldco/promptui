@@ -41,6 +41,9 @@ type Select struct {
 	// Size is the number of items that should appear on the select before scrolling is necessary. Defaults to 5.
 	Size int
 
+	// multiSelect sets whether it is possible to select multiple items from the list.
+	multiSelect bool
+
 	// CursorPos is the initial position of the cursor.
 	CursorPos int
 
@@ -149,6 +152,11 @@ type SelectTemplates struct {
 	// template is used for all items unless they are active or selected.
 	Inactive string
 
+	ActiveSelected     string
+	ActiveUnselected   string
+	InactiveSelected   string
+	InactiveUnselected string
+
 	// Selected is a text/template for when an item was successfully selected.
 	Selected string
 
@@ -172,12 +180,16 @@ type SelectTemplates struct {
 	// is overridden, the colors functions must be added in the override from promptui.FuncMap to work.
 	FuncMap template.FuncMap
 
-	label    *template.Template
-	active   *template.Template
-	inactive *template.Template
-	selected *template.Template
-	details  *template.Template
-	help     *template.Template
+	label              *template.Template
+	active             *template.Template
+	inactive           *template.Template
+	activeSelected     *template.Template
+	activeUnselected   *template.Template
+	inactiveSelected   *template.Template
+	inactiveUnselected *template.Template
+	selected           *template.Template
+	details            *template.Template
+	help               *template.Template
 }
 
 // SearchPrompt is the prompt displayed in search mode.
@@ -188,7 +200,11 @@ var SearchPrompt = "Search: "
 // the command prompt or it has received a valid value. It will return the value and an error if any
 // occurred during the select's execution.
 func (s *Select) Run() (int, string, error) {
-	return s.RunCursorAt(s.CursorPos, 0)
+	i, val, err := s.RunCursorAt(s.CursorPos, 0)
+	if err != nil {
+		return 0, "", err
+	}
+	return i[0], val[0], nil
 }
 
 // RunCursorAt executes the select list, initializing the cursor to the given
@@ -197,14 +213,14 @@ func (s *Select) Run() (int, string, error) {
 // within to list. Run will keep the prompt alive until it has been canceled
 // from the command prompt or it has received a valid value. It will return
 // the value and an error if any occurred during the select's execution.
-func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
+func (s *Select) RunCursorAt(cursorPos, scroll int) ([]int, []string, error) {
 	if s.Size == 0 {
 		s.Size = 5
 	}
 
 	l, err := list.New(s.Items, s.Size)
 	if err != nil {
-		return 0, "", err
+		return []int{}, []string{}, err
 	}
 	l.Searcher = s.Searcher
 
@@ -214,19 +230,19 @@ func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 
 	err = s.prepareTemplates()
 	if err != nil {
-		return 0, "", err
+		return []int{}, []string{}, err
 	}
 	return s.innerRun(cursorPos, scroll, ' ')
 }
 
-func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) {
+func (s *Select) innerRun(cursorPos, scroll int, top rune) ([]int, []string, error) {
 	c := &readline.Config{
 		Stdin:  s.Stdin,
 		Stdout: s.Stdout,
 	}
 	err := c.Init()
 	if err != nil {
-		return 0, "", err
+		return []int{}, []string{}, err
 	}
 
 	c.Stdin = readline.NewCancelableStdin(c.Stdin)
@@ -240,7 +256,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 
 	rl, err := readline.NewEx(c)
 	if err != nil {
-		return 0, "", err
+		return []int{}, []string{}, err
 	}
 
 	rl.Write([]byte(hideCursor))
@@ -256,11 +272,16 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
 		switch {
 		case key == KeyEnter:
+			if !s.multiSelect {
+				s.list.Select()
+			}
 			return nil, 0, true
 		case key == s.Keys.Next.Code || (key == 'j' && !searchMode):
 			s.list.Next()
 		case key == s.Keys.Prev.Code || (key == 'k' && !searchMode):
 			s.list.Prev()
+		case key == KeySpace:
+			s.list.Select()
 		case key == s.Keys.Search.Code:
 			if !canSearch {
 				break
@@ -327,10 +348,34 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 
 			output := []byte(page + " ")
 
-			if i == idx {
-				output = append(output, render(s.Templates.active, item)...)
+			selected := false
+			for _, s := range s.list.Selected() {
+				if i == s {
+					selected = true
+					break
+				}
+			}
+
+			if s.multiSelect {
+				if i == idx {
+					if selected {
+						output = append(output, render(s.Templates.activeSelected, item)...)
+					} else {
+						output = append(output, render(s.Templates.activeUnselected, item)...)
+					}
+				} else {
+					if selected {
+						output = append(output, render(s.Templates.inactiveSelected, item)...)
+					} else {
+						output = append(output, render(s.Templates.inactiveUnselected, item)...)
+					}
+				}
 			} else {
-				output = append(output, render(s.Templates.inactive, item)...)
+				if i == idx {
+					output = append(output, render(s.Templates.active, item)...)
+				} else {
+					output = append(output, render(s.Templates.inactive, item)...)
+				}
 			}
 
 			sb.Write(output)
@@ -382,24 +427,32 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		sb.Flush()
 		rl.Write([]byte(showCursor))
 		rl.Close()
-		return 0, "", err
+		return []int{}, []string{}, err
 	}
 
-	items, idx := s.list.Items()
-	item := items[idx]
+	items, _ := s.list.Items()
+
+	selected := []interface{}{}
+	selectedResults := []string{}
+	for _, i := range s.list.Selected() {
+		selected = append(selected, items[i])
+		selectedResults = append(selectedResults, fmt.Sprintf("%s", items[i]))
+	}
 
 	if s.HideSelected {
 		clearScreen(sb)
 	} else {
 		sb.Reset()
-		sb.Write(render(s.Templates.selected, item))
+		for _, item := range selected {
+			sb.Write(render(s.Templates.selected, item))
+		}
 		sb.Flush()
 	}
 
 	rl.Write([]byte(showCursor))
 	rl.Close()
 
-	return s.list.Index(), fmt.Sprintf("%v", item), err
+	return s.list.Selected(), selectedResults, err
 }
 
 // ScrollPosition returns the current scroll position.
@@ -449,6 +502,38 @@ func (s *Select) prepareTemplates() error {
 	}
 
 	tpls.inactive = tpl
+
+	tpls.ActiveSelected = fmt.Sprintf("%s [x] {{ . | underline }}", IconSelect)
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.ActiveSelected)
+	if err != nil {
+		return err
+	}
+
+	tpls.activeSelected = tpl
+
+	tpls.ActiveUnselected = fmt.Sprintf("%s [ ] {{ . | underline }}", IconSelect)
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.ActiveUnselected)
+	if err != nil {
+		return err
+	}
+
+	tpls.activeUnselected = tpl
+
+	tpls.InactiveSelected = "  [x] {{.}}"
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.InactiveSelected)
+	if err != nil {
+		return err
+	}
+
+	tpls.inactiveSelected = tpl
+
+	tpls.InactiveUnselected = "  [ ] {{.}}"
+	tpl, err = template.New("").Funcs(tpls.FuncMap).Parse(tpls.InactiveUnselected)
+	if err != nil {
+		return err
+	}
+
+	tpls.inactiveUnselected = tpl
 
 	if tpls.Selected == "" {
 		tpls.Selected = fmt.Sprintf(`{{ "%s" | green }} {{ . | faint }}`, IconGood)
@@ -550,8 +635,8 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 		}
 
 		selected, value, err := s.innerRun(1, 0, '+')
-		if err != nil || selected != 0 {
-			return selected - 1, value, err
+		if err != nil || selected[0] != 0 {
+			return selected[0] - 1, value[0], err
 		}
 
 		// XXX run through terminal for windows
@@ -566,6 +651,70 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	}
 	value, err := p.Run()
 	return SelectedAdd, value, err
+}
+
+// MultiSelect represents a list for selecting multiple items inside a list of items.
+type MultiSelect struct {
+	// Label is the text displayed on top of the list to direct input. The IconInitial value "?" will be
+	// appended automatically to the label so it does not need to be added.
+	Label string
+
+	// Items are the items to display inside the list. Each item will be listed individually with the
+	// AddLabel as the first item of the list.
+	Items []string
+
+	// Size is the number of items that should appear on the select before scrolling is necessary. Defaults to 5.
+	Size int
+
+	// Validate is an optional function that fill be used against the entered value in the prompt to validate it.
+	// If the value is valid, it is returned to the callee to be added in the list.
+	Validate ValidateFunc
+
+	// CursorPos is the initial position of the cursor.
+	CursorPos int
+
+	// IsVimMode sets whether to use vim mode when using readline in the command prompt. Look at
+	// https://godoc.org/github.com/chzyer/readline#Config for more information on readline.
+	IsVimMode bool
+
+	// HideSelected sets whether to hide the text displayed after an item is successfully selected.
+	HideSelected bool
+
+	// a function that defines how to render the cursor
+	Pointer Pointer
+
+	// HideHelp sets whether to hide help information.
+	HideHelp bool
+}
+
+func (ms *MultiSelect) Run() ([]int, []string, error) {
+	if ms.Size == 0 {
+		ms.Size = 5
+	}
+	list, err := list.New(ms.Items, ms.Size)
+	if err != nil {
+		return []int{}, []string{}, err
+	}
+
+	s := Select{
+		Label:        ms.Label,
+		Items:        ms.Items,
+		IsVimMode:    ms.IsVimMode,
+		HideHelp:     ms.HideHelp,
+		HideSelected: ms.HideSelected,
+		Size:         ms.Size,
+		list:         list,
+		multiSelect:  true,
+		Pointer:      ms.Pointer,
+	}
+	s.setKeys()
+
+	err = s.prepareTemplates()
+	if err != nil {
+		return []int{}, []string{}, err
+	}
+
+	return s.innerRun(0, 0, ' ')
 }
 
 func (s *Select) setKeys() {

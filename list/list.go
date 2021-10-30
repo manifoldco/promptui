@@ -21,8 +21,9 @@ const NotFound = -1
 type List struct {
 	items    []*interface{}
 	scope    []*interface{}
-	cursor   int // cursor holds the index of the current selected item
-	size     int // size is the number of visible options
+	cursor   int          // cursor holds the index of the current focused item
+	selected map[int]bool // holds multiple selected items
+	size     int          // size is the number of visible options
 	start    int
 	Searcher Searcher
 }
@@ -40,13 +41,14 @@ func New(items interface{}, size int) (*List, error) {
 
 	slice := reflect.ValueOf(items)
 	values := make([]*interface{}, slice.Len())
+	selected := map[int]bool{}
 
 	for i := range values {
 		item := slice.Index(i).Interface()
 		values[i] = &item
 	}
 
-	return &List{size: size, items: values, scope: values}, nil
+	return &List{size: size, items: values, selected: selected, scope: values}, nil
 }
 
 // Prev moves the visible list back one item. If the selected item is out of
@@ -234,4 +236,21 @@ func (l *List) Items() ([]interface{}, int) {
 	}
 
 	return result, active
+}
+
+func (l *List) Select() {
+	if _, exists := l.selected[l.cursor]; exists {
+		delete(l.selected, l.cursor)
+	} else {
+		l.selected[l.cursor] = true
+	}
+}
+
+func (l *List) Selected() []int {
+	selected := make([]int, 0, len(l.selected))
+	for s := range l.selected {
+		selected = append(selected, s)
+	}
+	return selected
+
 }
