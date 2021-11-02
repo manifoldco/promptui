@@ -515,6 +515,10 @@ type SelectWithAdd struct {
 
 	// HideHelp sets whether to hide help information.
 	HideHelp bool
+
+	// Templates can be used to customize the select output. If nil is passed, the
+	// default templates are used. See the SelectTemplates docs for more info.
+	Templates *SelectTemplates
 }
 
 // Run executes the select list. Its displays the label and the list of items, asking the user to chose any
@@ -541,6 +545,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			Size:      5,
 			list:      list,
 			Pointer:   sa.Pointer,
+			Templates: sa.Templates,
 		}
 		s.setKeys()
 
