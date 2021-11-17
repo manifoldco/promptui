@@ -9,17 +9,119 @@ import (
 	"text/template"
 
 	"github.com/chzyer/readline"
+
 	"github.com/moorara/promptui/list"
 	"github.com/moorara/promptui/screenbuf"
 )
 
 // SelectedAdd is used internally inside SelectWithAdd when the add option is selected in select mode.
-// Since -1 is not a possible selected index, this ensure that add mode is always unique inside
-// SelectWithAdd's logic.
+// Since -1 is not a possible selected index, this ensure that add mode is always unique inside SelectWithAdd's logic.
 const SelectedAdd = -1
 
-// Select represents a list of items used to enable selections, they can be used as search engines, menus
-// or as a list of items in a cli based prompt.
+// SearchPrompt is the prompt displayed in search mode.
+var SearchPrompt = "Search: "
+
+// Key defines a keyboard code and a display representation for the help menu.
+type Key struct {
+	// Code is a rune that will be used to compare against typed keys with readline.
+	// Check https://github.com/chzyer/readline for a list of codes
+	Code rune
+
+	// Display is the string that will be displayed inside the help menu to help inform the user
+	// of which key to use on his keyboard for various functions.
+	Display string
+}
+
+// SelectKeys defines the available keys used by select mode to enable the user to move around the list
+// and trigger search mode. See the Key struct docs for more information on keys.
+type SelectKeys struct {
+	// Next is the key used to move to the next element inside the list. Defaults to down arrow key.
+	Next Key
+
+	// Prev is the key used to move to the previous element inside the list. Defaults to up arrow key.
+	Prev Key
+
+	// PageUp is the key used to jump back to the first element inside the list. Defaults to left arrow key.
+	PageUp Key
+
+	// PageUp is the key used to jump forward to the last element inside the list. Defaults to right arrow key.
+	PageDown Key
+
+	// Search is the key used to trigger the search mode for the list. Default to the "/" key.
+	Search Key
+}
+
+// SelectTemplates allow a select list to be customized following stdlib text/template syntax.
+// Custom state, colors and background color are available for use inside the templates and are documented inside the Variable section of the docs.
+//
+// Examples
+//
+// text/templates use a special notation to display programmable content.
+// Using the double bracket notation, the value can be printed with specific helper functions.
+// For example
+//
+// This displays the value given to the template as pure, unstylized text. Structs are transformed to string
+// with this notation.
+// 	'{{ . }}'
+//
+// This displays the name property of the value colored in cyan
+// 	'{{ .Name | cyan }}'
+//
+// This displays the label property of value colored in red with a cyan background-color
+// 	'{{ .Label | red | cyan }}'
+//
+// See the doc of text/template for more info: https://golang.org/pkg/text/template/
+//
+// Notes
+//
+// Setting any of these templates will remove the icons from the default templates.
+// They must be added back in each of their specific templates.
+// The styles.go constants contains the default icons.
+type SelectTemplates struct {
+	// Label is a text/template for the main command line label. Defaults to printing the label as it with
+	// the IconInitial.
+	Label string
+
+	// Active is a text/template for when an item is currently active within the list.
+	Active string
+
+	// Inactive is a text/template for when an item is not currently active inside the list. This
+	// template is used for all items unless they are active or selected.
+	Inactive string
+
+	// Selected is a text/template for when an item was successfully selected.
+	Selected string
+
+	// Details is a text/template for when an item current active to show
+	// additional information. It can have multiple lines.
+	//
+	// Detail will always be displayed for the active element and thus can be used to display additional
+	// information on the element beyond its label.
+	//
+	// promptui will not trim spaces and tabs will be displayed if the template is indented.
+	Details string
+
+	// Help is a text/template for displaying instructions at the top. By default
+	// it shows keys for movement and search.
+	Help string
+
+	// FuncMap is a map of helper functions that can be used inside of templates according to the text/template
+	// documentation.
+	//
+	// By default, FuncMap contains the color functions used to color the text in templates. If FuncMap
+	// is overridden, the colors functions must be added in the override from promptui.FuncMap to work.
+	FuncMap template.FuncMap
+
+	label    *template.Template
+	active   *template.Template
+	inactive *template.Template
+	selected *template.Template
+	details  *template.Template
+	help     *template.Template
+}
+
+// Select represents a list of items used to enable selections,
+// they can be used as search engines, menus or as a list of items in a cli based prompt.
 type Select struct {
 	// Label is the text displayed on top of the list to direct input. The IconInitial value "?" will be
 	// appended automatically to the label so it does not need to be added.
@@ -82,121 +184,18 @@ type Select struct {
 	Stdout io.WriteCloser
 }
 
-// SelectKeys defines the available keys used by select mode to enable the user to move around the list
-// and trigger search mode. See the Key struct docs for more information on keys.
-type SelectKeys struct {
-	// Next is the key used to move to the next element inside the list. Defaults to down arrow key.
-	Next Key
-
-	// Prev is the key used to move to the previous element inside the list. Defaults to up arrow key.
-	Prev Key
-
-	// PageUp is the key used to jump back to the first element inside the list. Defaults to left arrow key.
-	PageUp Key
-
-	// PageUp is the key used to jump forward to the last element inside the list. Defaults to right arrow key.
-	PageDown Key
-
-	// Search is the key used to trigger the search mode for the list. Default to the "/" key.
-	Search Key
-}
-
-// Key defines a keyboard code and a display representation for the help menu.
-type Key struct {
-	// Code is a rune that will be used to compare against typed keys with readline.
-	// Check https://github.com/chzyer/readline for a list of codes
-	Code rune
-
-	// Display is the string that will be displayed inside the help menu to help inform the user
-	// of which key to use on his keyboard for various functions.
-	Display string
-}
-
-// SelectTemplates allow a select list to be customized following stdlib
-// text/template syntax. Custom state, colors and background color are available for use inside
-// the templates and are documented inside the Variable section of the docs.
-//
-// Examples
-//
-// text/templates use a special notation to display programmable content. Using the double bracket notation,
-// the value can be printed with specific helper functions. For example
-//
-// This displays the value given to the template as pure, unstylized text. Structs are transformed to string
-// with this notation.
-// 	'{{ . }}'
-//
-// This displays the name property of the value colored in cyan
-// 	'{{ .Name | cyan }}'
-//
-// This displays the label property of value colored in red with a cyan background-color
-// 	'{{ .Label | red | cyan }}'
-//
-// See the doc of text/template for more info: https://golang.org/pkg/text/template/
-//
-// Notes
-//
-// Setting any of these templates will remove the icons from the default templates. They must
-// be added back in each of their specific templates. The styles.go constants contains the default icons.
-type SelectTemplates struct {
-	// Label is a text/template for the main command line label. Defaults to printing the label as it with
-	// the IconInitial.
-	Label string
-
-	// Active is a text/template for when an item is currently active within the list.
-	Active string
-
-	// Inactive is a text/template for when an item is not currently active inside the list. This
-	// template is used for all items unless they are active or selected.
-	Inactive string
-
-	// Selected is a text/template for when an item was successfully selected.
-	Selected string
-
-	// Details is a text/template for when an item current active to show
-	// additional information. It can have multiple lines.
-	//
-	// Detail will always be displayed for the active element and thus can be used to display additional
-	// information on the element beyond its label.
-	//
-	// promptui will not trim spaces and tabs will be displayed if the template is indented.
-	Details string
-
-	// Help is a text/template for displaying instructions at the top. By default
-	// it shows keys for movement and search.
-	Help string
-
-	// FuncMap is a map of helper functions that can be used inside of templates according to the text/template
-	// documentation.
-	//
-	// By default, FuncMap contains the color functions used to color the text in templates. If FuncMap
-	// is overridden, the colors functions must be added in the override from promptui.FuncMap to work.
-	FuncMap template.FuncMap
-
-	label    *template.Template
-	active   *template.Template
-	inactive *template.Template
-	selected *template.Template
-	details  *template.Template
-	help     *template.Template
-}
-
-// SearchPrompt is the prompt displayed in search mode.
-var SearchPrompt = "Search: "
-
-// Run executes the select list. It displays the label and the list of items, asking the user to chose any
-// value within to list. Run will keep the prompt alive until it has been canceled from
-// the command prompt or it has received a valid value. It will return the value and an error if any
-// occurred during the select's execution.
+// Run executes the select list. It displays the label and the list of items, asking the user to chose any value within to list.
+// Run will keep the prompt alive until it has been canceled from the command prompt or it has received a valid value.
+// It will return the value and an error if any occurred during the select's execution.
 func (s *Select) Run() (int, string, error) {
 	return s.RunCursorAt(s.CursorPos, 0)
 }
 
-// RunCursorAt executes the select list, initializing the cursor to the given
-// position. Invalid cursor positions will be clamped to valid values.  It
-// displays the label and the list of items, asking the user to chose any value
-// within to list. Run will keep the prompt alive until it has been canceled
-// from the command prompt or it has received a valid value. It will return
-// the value and an error if any occurred during the select's execution.
+// RunCursorAt executes the select list, initializing the cursor to the given position.
+// Invalid cursor positions will be clamped to valid values.
+// It displays the label and the list of items, asking the user to chose any value within to list.
+// Run will keep the prompt alive until it has been canceled from the command prompt or it has received a valid value.
+// It will return the value and an error if any occurred during the select's execution.
 func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 	if s.Size == 0 {
 		s.Size = 5
@@ -206,16 +205,15 @@ func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 	if err != nil {
 		return 0, "", err
 	}
+
 	l.Searcher = s.Searcher
-
 	s.list = l
-
 	s.setKeys()
 
-	err = s.prepareTemplates()
-	if err != nil {
+	if err := s.prepareTemplates(); err != nil {
 		return 0, "", err
 	}
+
 	return s.innerRun(cursorPos, scroll, ' ')
 }
 
@@ -224,8 +222,8 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		Stdin:  s.Stdin,
 		Stdout: s.Stdout,
 	}
-	err := c.Init()
-	if err != nil {
+
+	if err := c.Init(); err != nil {
 		return 0, "", err
 	}
 
@@ -487,15 +485,14 @@ func (s *Select) prepareTemplates() error {
 	return nil
 }
 
-// SelectWithAdd represents a list for selecting a single item inside a list of items with the possibility to
-// add new items to the list.
+// SelectWithAdd represents a list for selecting a single item inside a list of items with the possibility to add new items to the list.
 type SelectWithAdd struct {
-	// Label is the text displayed on top of the list to direct input. The IconInitial value "?" will be
-	// appended automatically to the label so it does not need to be added.
+	// Label is the text displayed on top of the list to direct input.
+	// The IconInitial value "?" will be appended automatically to the label so it does not need to be added.
 	Label string
 
-	// Items are the items to display inside the list. Each item will be listed individually with the
-	// AddLabel as the first item of the list.
+	// Items are the items to display inside the list.
+	// Each item will be listed individually with the AddLabel as the first item of the list.
 	Items []string
 
 	// AddLabel is the label used for the first item of the list that enables adding a new item.
@@ -510,20 +507,19 @@ type SelectWithAdd struct {
 	// https://godoc.org/github.com/chzyer/readline#Config for more information on readline.
 	IsVimMode bool
 
-	// a function that defines how to render the cursor
+	// A function that defines how to render the cursor
 	Pointer Pointer
 
 	// HideHelp sets whether to hide help information.
 	HideHelp bool
 }
 
-// Run executes the select list. Its displays the label and the list of items, asking the user to chose any
-// value within to list or add his own. Run will keep the prompt alive until it has been canceled from
-// the command prompt or it has received a valid value.
+// Run executes the select list. Its displays the label and the list of items, asking the user to chose any value within to list or add his own.
+// Run will keep the prompt alive until it has been canceled from the command prompt or it has received a valid value.
 //
 // If the addLabel is selected in the list, this function will return a -1 index with the added label and no error.
-// Otherwise, it will return the index and the value of the selected item. In any case, if an error is triggered, it
-// will also return the error as its third return value.
+// Otherwise, it will return the index and the value of the selected item.
+// In any case, if an error is triggered, it will also return the error as its third return value.
 func (sa *SelectWithAdd) Run() (int, string, error) {
 	if len(sa.Items) > 0 {
 		newItems := append([]string{sa.AddLabel}, sa.Items...)

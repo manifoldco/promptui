@@ -1,12 +1,12 @@
+//go:build !windows
 // +build !windows
 
 package promptui
 
-// These are the default icons used by promptui for select and prompts. These should not be overridden and instead
-// customized through the use of custom templates
+// These are the default icons used by promptui for select and prompts.
+// These should not be overridden and instead customized through the use of custom templates
 var (
-	// IconInitial is the icon used when starting in prompt mode and the icon next to the label when
-	// starting in select mode.
+	// IconInitial is the icon used when starting in prompt mode and the icon next to the label when starting in select mode.
 	IconInitial = Styler(FGBlue)("?")
 
 	// IconGood is the icon used when a good answer is entered in prompt mode.

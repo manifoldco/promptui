@@ -6,8 +6,8 @@ import (
 	"strconv"
 )
 
-// This is an example for the Prompt mode of promptui. In this example, a prompt is created
-// with a validator function that validates the given value to make sure its a number.
+// This is an example for the Prompt mode of promptui.
+// In this example, a prompt is created with a validator function that validates the given value to make sure its a number.
 // If successful, it will output the chosen number in a formatted message.
 func Example_prompt() {
 	validate := func(input string) error {
@@ -33,9 +33,9 @@ func Example_prompt() {
 	fmt.Printf("You choose %q\n", result)
 }
 
-// This is an example for the Select mode of promptui. In this example, a select is created with
-// the days of the week as its items. When an item is selected, the selected day will be displayed
-// in a formatted message.
+// This is an example for the Select mode of promptui.
+// In this example, a select is created with the days of the week as its items.
+// When an item is selected, the selected day will be displayed in a formatted message.
 func Example_select() {
 	prompt := Select{
 		Label: "Select Day",

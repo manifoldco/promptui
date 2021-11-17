@@ -6,8 +6,7 @@ import (
 )
 
 // This example shows how to use the prompt validator and templates to create a stylized prompt.
-// The validator will make sure the value entered is a parseable float while the templates will
-// color the value to show validity.
+// The validator will make sure the value entered is a parseable float while the templates will color the value to show validity.
 func ExamplePrompt() {
 	// The validate function follows the required validator signature.
 	validate := func(input string) error {

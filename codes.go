@@ -95,12 +95,10 @@ func movementCode(n uint, code rune) string {
 	return esc + strconv.FormatUint(uint64(n), 10) + string(code)
 }
 
-// Styler is a function that accepts multiple possible styling transforms from the state,
-// color and background colors constants and transforms them into a templated string
-// to apply those styles in the CLI.
+// Styler is a function that accepts multiple possible styling transforms from the state, color and background colors constants
+// and transforms them into a templated string to apply those styles in the CLI.
 //
-// The returned styling function accepts a string that will be extended with
-// the wrapping function's styling attributes.
+// The returned styling function accepts a string that will be extended with the wrapping function's styling attributes.
 func Styler(attrs ...attribute) func(interface{}) string {
 	attrstrs := make([]string, len(attrs))
 	for i, v := range attrs {

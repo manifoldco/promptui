@@ -2,8 +2,7 @@ package promptui
 
 import "fmt"
 
-// This example shows how to create a SelectWithAdd that will add each new item it is given to the
-// list of items until one is chosen.
+// This example shows how to create a SelectWithAdd that will add each new item it is given to the list of items until one is chosen.
 func ExampleSelectWithAdd() {
 	items := []string{"Vim", "Emacs", "Sublime", "VSCode", "Atom"}
 	index := -1
