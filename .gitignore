@@ -1,3 +1,7 @@
-vendor
-all-cover.txt
-bin/
+# Test files
+*.out
+*.test
+
+# Misc
+*.log
+*.html
