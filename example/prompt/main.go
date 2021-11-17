@@ -3,22 +3,23 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
-	"github.com/manifoldco/promptui"
+	"github.com/moorara/promptui"
 )
 
 func main() {
 	validate := func(input string) error {
-		if len(input) < 6 {
-			return errors.New("Password must have more than 6 characters")
+		_, err := strconv.ParseFloat(input, 64)
+		if err != nil {
+			return errors.New("Invalid number")
 		}
 		return nil
 	}
 
 	prompt := promptui.Prompt{
-		Label:    "Password",
+		Label:    "Number",
 		Validate: validate,
-		Mask:     '*',
 	}
 
 	result, err := prompt.Run()
@@ -28,5 +29,5 @@ func main() {
 		return
 	}
 
-	fmt.Printf("Your password is %q\n", result)
+	fmt.Printf("You choose %q\n", result)
 }
