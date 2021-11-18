@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"text/tabwriter"
 	"text/template"
 
@@ -208,6 +209,7 @@ func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 
 	l.Searcher = s.Searcher
 	s.list = l
+
 	s.setKeys()
 
 	if err := s.prepareTemplates(); err != nil {
@@ -245,20 +247,28 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	sb := screenbuf.New(rl)
 
 	cur := NewCursor("", s.Pointer, false)
-
 	canSearch := s.Searcher != nil
 	searchMode := s.StartInSearchMode
+
 	s.list.SetCursor(cursorPos)
 	s.list.SetStart(scroll)
 
+	var mutex sync.Mutex
+
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
+		mutex.Lock()
+		defer mutex.Unlock()
+
 		switch {
 		case key == KeyEnter:
 			return nil, 0, true
+
 		case key == s.Keys.Next.Code || (key == 'j' && !searchMode):
 			s.list.Next()
+
 		case key == s.Keys.Prev.Code || (key == 'k' && !searchMode):
 			s.list.Prev()
+
 		case key == s.Keys.Search.Code:
 			if !canSearch {
 				break
@@ -271,6 +281,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			} else {
 				searchMode = true
 			}
+
 		case key == KeyBackspace || key == KeyCtrlH:
 			if !canSearch || !searchMode {
 				break
@@ -282,10 +293,13 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			} else {
 				s.list.CancelSearch()
 			}
+
 		case key == s.Keys.PageUp.Code || (key == 'h' && !searchMode):
 			s.list.PageUp()
+
 		case key == s.Keys.PageDown.Code || (key == 'l' && !searchMode):
 			s.list.PageDown()
+
 		default:
 			if canSearch && searchMode {
 				cur.Update(string(line))
@@ -352,9 +366,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	})
 
 	for {
-		_, err = rl.Readline()
-
-		if err != nil {
+		if _, err = rl.Readline(); err != nil {
 			switch {
 			case err == readline.ErrInterrupt, err.Error() == "Interrupt":
 				err = ErrInterrupt
@@ -371,15 +383,20 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 
 	}
 
+	mutex.Lock()
+	defer mutex.Unlock()
+
 	if err != nil {
 		if err.Error() == "Interrupt" {
 			err = ErrInterrupt
 		}
+
 		sb.Reset()
 		sb.WriteString("")
 		sb.Flush()
 		rl.Write([]byte(showCursor))
 		rl.Close()
+
 		return 0, "", err
 	}
 
@@ -485,6 +502,60 @@ func (s *Select) prepareTemplates() error {
 	return nil
 }
 
+func (s *Select) setKeys() {
+	if s.Keys != nil {
+		return
+	}
+	s.Keys = &SelectKeys{
+		Prev:     Key{Code: KeyPrev, Display: KeyPrevDisplay},
+		Next:     Key{Code: KeyNext, Display: KeyNextDisplay},
+		PageUp:   Key{Code: KeyBackward, Display: KeyBackwardDisplay},
+		PageDown: Key{Code: KeyForward, Display: KeyForwardDisplay},
+		Search:   Key{Code: '/', Display: "/"},
+	}
+}
+
+func (s *Select) renderDetails(item interface{}) [][]byte {
+	if s.Templates.details == nil {
+		return nil
+	}
+
+	var buf bytes.Buffer
+
+	w := tabwriter.NewWriter(&buf, 0, 0, 8, ' ', 0)
+
+	err := s.Templates.details.Execute(w, item)
+	if err != nil {
+		fmt.Fprintf(w, "%v", item)
+	}
+
+	w.Flush()
+
+	output := buf.Bytes()
+
+	return bytes.Split(output, []byte("\n"))
+}
+
+func (s *Select) renderHelp(b bool) []byte {
+	keys := struct {
+		NextKey     string
+		PrevKey     string
+		PageDownKey string
+		PageUpKey   string
+		Search      bool
+		SearchKey   string
+	}{
+		NextKey:     s.Keys.Next.Display,
+		PrevKey:     s.Keys.Prev.Display,
+		PageDownKey: s.Keys.PageDown.Display,
+		PageUpKey:   s.Keys.PageUp.Display,
+		SearchKey:   s.Keys.Search.Display,
+		Search:      b,
+	}
+
+	return render(s.Templates.help, keys)
+}
+
 // SelectWithAdd represents a list for selecting a single item inside a list of items with the possibility to add new items to the list.
 type SelectWithAdd struct {
 	// Label is the text displayed on top of the list to direct input.
@@ -538,10 +609,10 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			list:      list,
 			Pointer:   sa.Pointer,
 		}
+
 		s.setKeys()
 
-		err = s.prepareTemplates()
-		if err != nil {
+		if err := s.prepareTemplates(); err != nil {
 			return 0, "", err
 		}
 
@@ -562,60 +633,6 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 	}
 	value, err := p.Run()
 	return SelectedAdd, value, err
-}
-
-func (s *Select) setKeys() {
-	if s.Keys != nil {
-		return
-	}
-	s.Keys = &SelectKeys{
-		Prev:     Key{Code: KeyPrev, Display: KeyPrevDisplay},
-		Next:     Key{Code: KeyNext, Display: KeyNextDisplay},
-		PageUp:   Key{Code: KeyBackward, Display: KeyBackwardDisplay},
-		PageDown: Key{Code: KeyForward, Display: KeyForwardDisplay},
-		Search:   Key{Code: '/', Display: "/"},
-	}
-}
-
-func (s *Select) renderDetails(item interface{}) [][]byte {
-	if s.Templates.details == nil {
-		return nil
-	}
-
-	var buf bytes.Buffer
-
-	w := tabwriter.NewWriter(&buf, 0, 0, 8, ' ', 0)
-
-	err := s.Templates.details.Execute(w, item)
-	if err != nil {
-		fmt.Fprintf(w, "%v", item)
-	}
-
-	w.Flush()
-
-	output := buf.Bytes()
-
-	return bytes.Split(output, []byte("\n"))
-}
-
-func (s *Select) renderHelp(b bool) []byte {
-	keys := struct {
-		NextKey     string
-		PrevKey     string
-		PageDownKey string
-		PageUpKey   string
-		Search      bool
-		SearchKey   string
-	}{
-		NextKey:     s.Keys.Next.Display,
-		PrevKey:     s.Keys.Prev.Display,
-		PageDownKey: s.Keys.PageDown.Display,
-		PageUpKey:   s.Keys.PageUp.Display,
-		SearchKey:   s.Keys.Search.Display,
-		Search:      b,
-	}
-
-	return render(s.Templates.help, keys)
 }
 
 func render(tpl *template.Template, data interface{}) []byte {
