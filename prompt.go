@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/chzyer/readline"
@@ -158,8 +159,12 @@ func (p *Prompt) Run() (string, error) {
 	cur := NewCursor(input, p.Pointer, eraseDefault)
 
 	var inputErr error
+	var mutex sync.Mutex
 
 	c.SetListener(func(input []rune, pos int, key rune) ([]rune, int, bool) {
+		mutex.Lock()
+		defer mutex.Unlock()
+
 		_, _, keepOn := cur.Listen(input, pos, key)
 		err := validFn(cur.Get())
 
@@ -196,12 +201,12 @@ func (p *Prompt) Run() (string, error) {
 	for {
 		_, err = rl.Readline()
 
-		inputErr = validFn(cur.Get())
-		if inputErr == nil {
-			break
-		}
+		mutex.Lock()
+		validErr := validFn(cur.Get())
+		inputErr = validErr
+		mutex.Unlock()
 
-		if err != nil {
+		if validErr == nil || err != nil {
 			break
 		}
 	}
@@ -226,6 +231,9 @@ func (p *Prompt) Run() (string, error) {
 
 		return "", err
 	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	echo := cur.Get()
 	if p.Mask != 0 {
