@@ -72,7 +72,7 @@ type Select struct {
 	// StartInSearchMode sets whether or not the select mode should start in search mode or selection mode.
 	// For search mode to work, the Search property must be implemented.
 	StartInSearchMode bool
-	
+
 	// PrefillSearch is set as the value of the search field when search mode is enabled for the first time.
 	PrefillSearch string
 
