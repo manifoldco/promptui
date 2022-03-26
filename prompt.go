@@ -26,7 +26,7 @@ type Prompt struct {
 	// other than <Enter> automatically clears the default value.
 	AllowEdit bool
 
-	// Validate is an optional function that fill be used against the entered value in the prompt to validate it.
+	// Validate is an optional function that will be used against the entered value in the prompt to validate it.
 	Validate ValidateFunc
 
 	// Mask is an optional rune that sets which character to display instead of the entered characters. This
