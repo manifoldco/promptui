@@ -58,6 +58,8 @@ const (
 	hideCursor = esc + "?25l"
 	showCursor = esc + "?25h"
 	clearLine  = esc + "2K"
+	doLineWrap = esc + "\x1b[?7h"
+	noLineWrap = esc + "\x1b[?7l"
 )
 
 // FuncMap defines template helpers for the output. It can be extended as a regular map.

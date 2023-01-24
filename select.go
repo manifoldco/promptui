@@ -116,24 +116,27 @@ type Key struct {
 // text/template syntax. Custom state, colors and background color are available for use inside
 // the templates and are documented inside the Variable section of the docs.
 //
-// Examples
+// # Examples
 //
 // text/templates use a special notation to display programmable content. Using the double bracket notation,
 // the value can be printed with specific helper functions. For example
 //
 // This displays the value given to the template as pure, unstylized text. Structs are transformed to string
 // with this notation.
-// 	'{{ . }}'
+//
+//	'{{ . }}'
 //
 // This displays the name property of the value colored in cyan
-// 	'{{ .Name | cyan }}'
+//
+//	'{{ .Name | cyan }}'
 //
 // This displays the label property of value colored in red with a cyan background-color
-// 	'{{ .Label | red | cyan }}'
+//
+//	'{{ .Label | red | cyan }}'
 //
 // See the doc of text/template for more info: https://golang.org/pkg/text/template/
 //
-// Notes
+// # Notes
 //
 // Setting any of these templates will remove the icons from the default templates. They must
 // be added back in each of their specific templates. The styles.go constants contains the default icons.
@@ -244,6 +247,7 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	}
 
 	rl.Write([]byte(hideCursor))
+	rl.Write([]byte(noLineWrap))
 	sb := screenbuf.New(rl)
 
 	cur := NewCursor("", s.Pointer, false)
@@ -377,11 +381,14 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 		if err.Error() == "Interrupt" {
 			err = ErrInterrupt
 		}
+		clearScreen(sb)
 		sb.Reset()
 		sb.WriteString("")
 		sb.Flush()
 		rl.Write([]byte(showCursor))
 		rl.Close()
+
+		os.Stdout.Write([]byte(doLineWrap))
 		return 0, "", err
 	}
 
