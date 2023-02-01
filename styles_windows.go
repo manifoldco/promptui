@@ -5,7 +5,7 @@ package promptui
 var (
 	// IconInitial is the icon used when starting in prompt mode and the icon next to the label when
 	// starting in select mode.
-	IconInitial = Styler(FGBlue)("?")
+	IconInitial = Styler(FGBlue)("")
 
 	// IconGood is the icon used when a good answer is entered in prompt mode.
 	IconGood = Styler(FGGreen)("v")

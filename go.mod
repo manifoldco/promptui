@@ -1,4 +1,4 @@
-module github.com/manifoldco/promptui
+module github.com/duckswipe/promptui
 
 go 1.12
 
