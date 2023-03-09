@@ -288,6 +288,8 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			s.list.PageUp()
 		case key == s.Keys.PageDown.Code || (key == 'l' && !searchMode):
 			s.list.PageDown()
+		case key == readline.CharInterrupt || key == readline.CharKill:
+			return nil, 0, true
 		default:
 			if canSearch && searchMode {
 				cur.Update(string(line))
