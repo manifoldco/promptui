@@ -58,19 +58,22 @@ type Prompt struct {
 // text/template syntax. Custom state, colors and background color are available for use inside
 // the templates and are documented inside the Variable section of the docs.
 //
-// Examples
+// # Examples
 //
 // text/templates use a special notation to display programmable content. Using the double bracket notation,
 // the value can be printed with specific helper functions. For example
 //
 // This displays the value given to the template as pure, unstylized text.
-// 	'{{ . }}'
+//
+//	'{{ . }}'
 //
 // This displays the value colored in cyan
-// 	'{{ . | cyan }}'
+//
+//	'{{ . | cyan }}'
 //
 // This displays the value colored in red with a cyan background-color
-// 	'{{ . | red | cyan }}'
+//
+//	'{{ . | red | cyan }}'
 //
 // See the doc of text/template for more info: https://golang.org/pkg/text/template/
 type PromptTemplates struct {
@@ -229,11 +232,13 @@ func (p *Prompt) Run() (string, error) {
 	prompt := render(p.Templates.success, p.Label)
 	prompt = append(prompt, []byte(echo)...)
 
+	lowerDefault := strings.ToLower(p.Default)
 	if p.IsConfirm {
-		lowerDefault := strings.ToLower(p.Default)
-		if strings.ToLower(cur.Get()) != "y" && (lowerDefault != "y" || (lowerDefault == "y" && cur.Get() != "")) {
+		if (cur.Get() == "" && lowerDefault == "") ||
+			(strings.ToLower(cur.Get()) != "y" && strings.ToLower(cur.Get()) != "n" && cur.Get() != "") {
+
 			prompt = render(p.Templates.invalid, p.Label)
-			err = ErrAbort
+			err = ErrInvalidInput
 		}
 	}
 
@@ -248,6 +253,9 @@ func (p *Prompt) Run() (string, error) {
 	rl.Write([]byte(showCursor))
 	rl.Close()
 
+	if lowerDefault != "" && cur.Get() == "" {
+		return lowerDefault, err
+	}
 	return cur.Get(), err
 }
 
