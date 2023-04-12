@@ -19,8 +19,8 @@ var ErrEOF = errors.New("^D")
 // encountered.
 var ErrInterrupt = errors.New("^C")
 
-// ErrAbort is the error returned when confirm prompts are supplied "n"
-var ErrAbort = errors.New("")
+// ErrInvalidInput is the error returned when confirm prompts are supplied input different from y/n
+var ErrInvalidInput = errors.New("invalid input")
 
 // ValidateFunc is a placeholder type for any validation functions that validates a given input. It should return
 // a ValidationError if the input is not valid.
