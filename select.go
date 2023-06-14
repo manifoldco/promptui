@@ -525,9 +525,6 @@ type SelectWithAdd struct {
 	// a function that defines how to render the cursor
 	Pointer Pointer
 
-	// A value that can de returned on exit as result of Run()
-	ExitValue string
-
 	// HideHelp sets whether to hide help information.
 	HideHelp bool
 }
