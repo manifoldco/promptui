@@ -99,6 +99,9 @@ type SelectKeys struct {
 
 	// Search is the key used to trigger the search mode for the list. Default to the "/" key.
 	Search Key
+
+	// Exit is the key used to correctly shutdown the process. Default to the "q" key.
+	Exit Key
 }
 
 // Key defines a keyboard code and a display representation for the help menu.
@@ -253,6 +256,8 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 	s.list.SetCursor(cursorPos)
 	s.list.SetStart(scroll)
 
+	isExit := false
+
 	c.SetListener(func(line []rune, pos int, key rune) ([]rune, int, bool) {
 		switch {
 		case key == KeyEnter:
@@ -273,6 +278,10 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			} else {
 				searchMode = true
 			}
+		case key == s.Keys.Exit.Code && !searchMode:
+			isExit = true
+			closeReadlineInstance(rl)
+			return nil, 0, true
 		case key == KeyBackspace || key == KeyCtrlH:
 			if !canSearch || !searchMode {
 				break
@@ -355,6 +364,9 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 
 	for {
 		_, err = rl.Readline()
+		if isExit {
+			err = readline.ErrInterrupt
+		}
 
 		if err != nil {
 			switch {
@@ -578,6 +590,7 @@ func (s *Select) setKeys() {
 		PageUp:   Key{Code: KeyBackward, Display: KeyBackwardDisplay},
 		PageDown: Key{Code: KeyForward, Display: KeyForwardDisplay},
 		Search:   Key{Code: '/', Display: "/"},
+		Exit:     Key{Code: 'q', Display: "q"},
 	}
 }
 
@@ -635,4 +648,10 @@ func clearScreen(sb *screenbuf.ScreenBuf) {
 	sb.Reset()
 	sb.Clear()
 	sb.Flush()
+}
+
+func closeReadlineInstance(rl *readline.Instance) {
+	rl.Write([]byte(showCursor))
+	rl.Clean()
+	rl.Close()
 }
