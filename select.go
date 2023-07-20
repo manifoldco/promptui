@@ -99,6 +99,9 @@ type SelectKeys struct {
 
 	// Search is the key used to trigger the search mode for the list. Default to the "/" key.
 	Search Key
+
+	// Cancel is the key used to cancel the prompt.
+	Cancel Key
 }
 
 // Key defines a keyboard code and a display representation for the help menu.
@@ -288,6 +291,11 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			s.list.PageUp()
 		case key == s.Keys.PageDown.Code || (key == 'l' && !searchMode):
 			s.list.PageDown()
+		case key == s.Keys.Cancel.Code:
+			err := rl.Close()
+			if err != nil {
+				panic(err)
+			}
 		default:
 			if canSearch && searchMode {
 				cur.Update(string(line))
@@ -578,6 +586,7 @@ func (s *Select) setKeys() {
 		PageUp:   Key{Code: KeyBackward, Display: KeyBackwardDisplay},
 		PageDown: Key{Code: KeyForward, Display: KeyForwardDisplay},
 		Search:   Key{Code: '/', Display: "/"},
+		Cancel:   Key{Code: 'q', Display: "q"},
 	}
 }
 
