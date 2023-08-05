@@ -17,6 +17,7 @@ func main() {
 			Label:    "What's your text editor",
 			Items:    items,
 			AddLabel: "Other",
+			Default: 3,
 		}
 
 		index, result, err = prompt.Run()

@@ -2,15 +2,17 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/manifoldco/promptui"
 )
 
 func main() {
+	items := []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+	"Saturday", "Sunday"}
+	// Default count from 1!!
 	prompt := promptui.Select{
 		Label: "Select Day",
-		Items: []string{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
-			"Saturday", "Sunday"},
+		Items: items,
+		Default: 3,
 	}
 
 	_, result, err := prompt.Run()

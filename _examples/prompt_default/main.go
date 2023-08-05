@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os/user"
-
 	"github.com/manifoldco/promptui"
 )
 
