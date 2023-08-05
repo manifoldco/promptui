@@ -239,7 +239,9 @@ func defaultValueSelectWithAdd(s *SelectWithAdd) bool {
 // occurred during the select's execution.
 func (s *Select) Run() (int, string, error) {
 
-	defaultValue(s)
+	if !defaultValue(s) {
+		return 0 , "" , errors.New("Default index + 1 was not founded")
+	}
 
 	return s.RunCursorAt(s.CursorPos, 0)
 }
