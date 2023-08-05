@@ -10,8 +10,8 @@ func main() {
 	prompt := promptui.Prompt{
 		Label:     "Delete Resource",
 		IsConfirm: true,
+		
 	}
-
 	result, err := prompt.Run()
 
 	if err != nil {

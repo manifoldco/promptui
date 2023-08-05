@@ -2,9 +2,11 @@ package promptui
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"text/tabwriter"
 	"text/template"
 
@@ -27,6 +29,10 @@ type Select struct {
 	// The value for Label can be a simple string or a struct that will need to be accessed by dot notation
 	// inside the templates. For example, `{{ .Name }}` will display the name property of a struct.
 	Label interface{}
+
+	// the (index + 1) number of item
+
+	Default int
 
 	// Items are the items to display inside the list. It expect a slice of any kind of values, including strings.
 	//
@@ -116,24 +122,27 @@ type Key struct {
 // text/template syntax. Custom state, colors and background color are available for use inside
 // the templates and are documented inside the Variable section of the docs.
 //
-// Examples
+// # Examples
 //
 // text/templates use a special notation to display programmable content. Using the double bracket notation,
 // the value can be printed with specific helper functions. For example
 //
 // This displays the value given to the template as pure, unstylized text. Structs are transformed to string
 // with this notation.
-// 	'{{ . }}'
+//
+//	'{{ . }}'
 //
 // This displays the name property of the value colored in cyan
-// 	'{{ .Name | cyan }}'
+//
+//	'{{ .Name | cyan }}'
 //
 // This displays the label property of value colored in red with a cyan background-color
-// 	'{{ .Label | red | cyan }}'
+//
+//	'{{ .Label | red | cyan }}'
 //
 // See the doc of text/template for more info: https://golang.org/pkg/text/template/
 //
-// Notes
+// # Notes
 //
 // Setting any of these templates will remove the icons from the default templates. They must
 // be added back in each of their specific templates. The styles.go constants contains the default icons.
@@ -144,6 +153,10 @@ type SelectTemplates struct {
 
 	// Active is a text/template for when an item is currently active within the list.
 	Active string
+
+	// the (index + 1) number of item
+
+	Default int
 
 	// Inactive is a text/template for when an item is not currently active inside the list. This
 	// template is used for all items unless they are active or selected.
@@ -183,11 +196,53 @@ type SelectTemplates struct {
 // SearchPrompt is the prompt displayed in search mode.
 var SearchPrompt = "Search: "
 
+// computing the default value for only select
+
+func defaultValue(s *Select) bool {
+	itemsValue := reflect.ValueOf(s.Items)
+	if itemsValue.Kind() == reflect.Slice {
+		if s.Default <= itemsValue.Len() {
+			var b []interface{}
+			b = append(b, itemsValue.Index(s.Default-1))
+			for i := 0; i < itemsValue.Len(); i++ {
+				if i != (s.Default - 1) {
+					b = append(b, itemsValue.Index(i))
+				}
+			}
+			s.Items = b
+			return true
+		}
+	}
+	return false
+}
+
+// computing the default value for only select
+
+func defaultValueSelectWithAdd(s *SelectWithAdd) bool {
+	if s.Default <= len(s.Items) {
+		var b []string
+		b = append(b, s.Items[s.Default-1])
+		for i, v := range s.Items {
+			if i != (s.Default - 1) {
+				b = append(b, v)
+			}
+		}
+		s.Items = b
+		return true
+	}
+	return false
+}
+
 // Run executes the select list. It displays the label and the list of items, asking the user to chose any
 // value within to list. Run will keep the prompt alive until it has been canceled from
 // the command prompt or it has received a valid value. It will return the value and an error if any
 // occurred during the select's execution.
 func (s *Select) Run() (int, string, error) {
+
+	if !defaultValue(s) {
+		return 0 , "" , errors.New("Default index + 1 was not founded")
+	}
+
 	return s.RunCursorAt(s.CursorPos, 0)
 }
 
@@ -219,15 +274,19 @@ func (s *Select) RunCursorAt(cursorPos, scroll int) (int, string, error) {
 	return s.innerRun(cursorPos, scroll, ' ')
 }
 
+func checkForDefaultValue(s *Select, g *int) bool {
+	return true
+}
+
 func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) {
+
+	// Checking for the default value
+
 	c := &readline.Config{
 		Stdin:  s.Stdin,
 		Stdout: s.Stdout,
 	}
 	err := c.Init()
-	if err != nil {
-		return 0, "", err
-	}
 
 	c.Stdin = readline.NewCancelableStdin(c.Stdin)
 
@@ -341,7 +400,6 @@ func (s *Select) innerRun(cursorPos, scroll int, top rune) (int, string, error) 
 			sb.WriteString("No results")
 		} else {
 			active := items[idx]
-
 			details := s.renderDetails(active)
 			for _, d := range details {
 				sb.Write(d)
@@ -490,9 +548,14 @@ func (s *Select) prepareTemplates() error {
 // SelectWithAdd represents a list for selecting a single item inside a list of items with the possibility to
 // add new items to the list.
 type SelectWithAdd struct {
+
 	// Label is the text displayed on top of the list to direct input. The IconInitial value "?" will be
 	// appended automatically to the label so it does not need to be added.
 	Label string
+
+	// the (index + 1) number of item
+
+	Default int
 
 	// Items are the items to display inside the list. Each item will be listed individually with the
 	// AddLabel as the first item of the list.
@@ -524,8 +587,15 @@ type SelectWithAdd struct {
 // If the addLabel is selected in the list, this function will return a -1 index with the added label and no error.
 // Otherwise, it will return the index and the value of the selected item. In any case, if an error is triggered, it
 // will also return the error as its third return value.
+
 func (sa *SelectWithAdd) Run() (int, string, error) {
+
+	if !defaultValueSelectWithAdd(sa) {
+		return 0 , "",errors.New("please check the default value because it not exists")
+	}
+
 	if len(sa.Items) > 0 {
+
 		newItems := append([]string{sa.AddLabel}, sa.Items...)
 
 		list, err := list.New(newItems, 5)
@@ -538,6 +608,7 @@ func (sa *SelectWithAdd) Run() (int, string, error) {
 			Items:     newItems,
 			IsVimMode: sa.IsVimMode,
 			HideHelp:  sa.HideHelp,
+			Default:   sa.Default,
 			Size:      5,
 			list:      list,
 			Pointer:   sa.Pointer,

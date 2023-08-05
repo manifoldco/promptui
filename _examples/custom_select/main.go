@@ -52,6 +52,7 @@ func main() {
 		Items:     peppers,
 		Templates: templates,
 		Size:      4,
+		Default: 2,
 		Searcher:  searcher,
 	}
 
