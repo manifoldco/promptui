@@ -13,7 +13,7 @@ bootstrap:
 .PHONY: bootstrap
 
 mod-update:
-	go get -u 
+	go get -u ./...
 	go mod tidy
 
 mod-tidy:
