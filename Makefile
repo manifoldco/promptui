@@ -9,11 +9,11 @@ ci: bootstrap lint cover
 #################################################
 
 bootstrap:
-	curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s v1.21.0
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.54.2
 .PHONY: bootstrap
 
 mod-update:
-	go get -u -m
+	go get -u 
 	go mod tidy
 
 mod-tidy:

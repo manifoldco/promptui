@@ -13,14 +13,11 @@ linters:
   disable-all: true
   enable:
     - misspell
-    - golint
     - goimports
     - ineffassign
-    - deadcode
     - gofmt
     - govet
-    - structcheck
     - unconvert
     - megacheck
     - typecheck
-    - varcheck
+    - unused

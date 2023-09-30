@@ -2,16 +2,14 @@
 
 Interactive prompt for command-line applications.
 
-We built Promptui because we wanted to make it easy and fun to explore cloud
-services with [manifold cli](https://github.com/manifoldco/manifold-cli).
+This is a continuation of the original but abandoned [manifoldco/promptui](https://github.com/manifoldco/promptui).
 
-[Code of Conduct](./CODE_OF_CONDUCT.md) |
-[Contribution Guidelines](./.github/CONTRIBUTING.md)
+It is used in software that still needs to be supported, however it is not a very active project. PRs are welcome but 
+file an issue first to discuss the change.
 
-[![GitHub release](https://img.shields.io/github/tag/manifoldco/promptui.svg?label=latest)](https://github.com/manifoldco/promptui/releases)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/manifoldco/promptui)
-[![Travis](https://img.shields.io/travis/manifoldco/promptui/master.svg)](https://travis-ci.org/manifoldco/promptui)
-[![Go Report Card](https://goreportcard.com/badge/github.com/manifoldco/promptui)](https://goreportcard.com/report/github.com/manifoldco/promptui)
+[![GitHub release](https://img.shields.io/github/tag/basvanbeek/promptui.svg?label=latest)](https://github.com/basvanbeek/promptui/releases)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/basvanbeek/promptui)
+[![Go Report Card](https://goreportcard.com/badge/github.com/basvanbeek/promptui)](https://goreportcard.com/report/github.com/basvanbeek/promptui)
 [![License](https://img.shields.io/badge/license-BSD-blue.svg)](./LICENSE.md)
 
 ## Overview
@@ -31,7 +29,7 @@ Promptui has two main input modes:
 - `Select` provides a list of options to choose from. Select supports
   pagination, search, detailed view and custom templates.
 
-For a full list of options check [GoDoc](https://godoc.org/github.com/manifoldco/promptui).
+For a full list of options check [GoDoc](https://godoc.org/github.com/basvanbeek/promptui).
 
 ## Basic Usage
 
@@ -45,7 +43,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/manifoldco/promptui"
+	"github.com/basvanbeek/promptui"
 )
 
 func main() {
@@ -81,7 +79,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/manifoldco/promptui"
+	"github.com/basvanbeek/promptui"
 )
 
 func main() {
@@ -104,4 +102,4 @@ func main() {
 
 ### More Examples
 
-See full list of [examples](https://github.com/manifoldco/promptui/tree/master/_examples)
+See full list of [examples](https://github.com/basvanbeek/promptui/tree/master/_examples)
