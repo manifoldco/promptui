@@ -41,11 +41,14 @@ func New(items interface{}, size int) (*List, error) {
 	slice := reflect.ValueOf(items)
 	values := make([]*interface{}, slice.Len())
 
-	for i := range values {
-		item := slice.Index(i).Interface()
-		values[i] = &item
+	// Each item from the input slice is wrapped in an interface{},
+	// and a pointer to this interface{} is stored. This ensures that
+	// each element in `values` points to a unique interface{} holding the item's value.
+	for i := 0; i < slice.Len(); i++ {
+		val := slice.Index(i).Interface()
+		values[i] = new(interface{}) // Allocate new memory for an interface{}
+		*values[i] = val             // Store the item's value in the new interface{}
 	}
-
 	return &List{size: size, items: values, scope: values}, nil
 }
 
