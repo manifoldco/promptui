@@ -5,14 +5,14 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Lint
-        uses: gardenbed/actions/go-lint@main
+        uses: neatplatform/actions/go-lint@main
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Test
         id: test
-        uses: gardenbed/actions/go-cover@main
+        uses: neatplatform/actions/go-cover@main
