@@ -160,6 +160,9 @@ func (p *Prompt) Run() (string, error) {
 
 	listen := func(input []rune, pos int, key rune) ([]rune, int, bool) {
 		_, _, keepOn := cur.Listen(input, pos, key)
+		if !keepOn {
+			return nil, 0, false
+		}
 		err := validFn(cur.Get())
 		var prompt []byte
 

@@ -8,6 +8,12 @@ var (
 	// KeyEnter is the default key for submission/selection.
 	KeyEnter rune = readline.CharEnter
 
+	// KeyCtrlJ is the newline/linefeed key.
+	KeyCtrlJ rune = readline.CharCtrlJ
+
+	// KeyInterrupt is the interrupt key (Ctrl+C).
+	KeyInterrupt rune = readline.CharInterrupt
+
 	// KeyCtrlH is the key for deleting input text.
 	KeyCtrlH rune = readline.CharCtrlH
 

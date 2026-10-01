@@ -198,6 +198,11 @@ func (c *Cursor) Backspace() {
 
 // Listen is a readline Listener that updates internal cursor state appropriately.
 func (c *Cursor) Listen(line []rune, pos int, key rune) ([]rune, int, bool) {
+	switch key {
+	case KeyEnter, KeyCtrlJ, KeyInterrupt:
+		return []rune(c.Get()), c.Position, false
+	}
+
 	if line != nil {
 		// no matter what, update our internal representation.
 		c.Update(string(line))
@@ -205,8 +210,6 @@ func (c *Cursor) Listen(line []rune, pos int, key rune) ([]rune, int, bool) {
 
 	switch key {
 	case 0: // empty
-	case KeyEnter:
-		return []rune(c.Get()), c.Position, false
 	case KeyBackspace, KeyCtrlH:
 		if c.erase {
 			c.erase = false
