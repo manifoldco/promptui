@@ -9,6 +9,14 @@ func TestDefinedCursors(t *testing.T) {
 			t.Fatalf("%x!=%x", "|", p)
 		}
 	})
+
+	t.Run("blockCursor", func(t *testing.T) {
+		expected := "\033[7ma\033[0m"
+		actual := string(blockCursor([]rune("a")))
+		if actual != expected {
+			t.Fatalf("expected %q, got %q", expected, actual)
+		}
+	})
 }
 
 func TestCursor(t *testing.T) {

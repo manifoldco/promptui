@@ -14,7 +14,7 @@ func defaultCursor(ignored []rune) []rune {
 }
 
 func blockCursor(input []rune) []rune {
-	return []rune(fmt.Sprintf("\\e[7m%s\\e[0m", string(input)))
+	return []rune(fmt.Sprintf("%s7m%s%s", esc, string(input), ResetCode))
 }
 
 func pipeCursor(input []rune) []rune {
